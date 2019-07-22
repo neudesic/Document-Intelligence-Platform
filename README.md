@@ -1,13 +1,12 @@
+# Document Integration Platform
+
 * [Introduction](#introduction)
-* [Getting Started](#getting-started)
+* [Prerequisites](#prerequisites)
 * [Build](#build)
-* [Tear Down](#tear-down)
+* [Cleanup](#cleanup)
 
-
-# Introduction 
-The Document Integration Platform  (DIP) is a framework to quickly build AI solutions for document intensive use cases that requires a “skilled reviewer”, a "skilled reviewer" being a resources that can review, identify or possibly perform a tasks on said documents based on certain criteria.
-
-# Getting Started
+## Introduction 
+The Document Integration Platform  (DIP) is a framework to quickly build AI solutions for document intensive use cases that require a “skilled reviewer”, a "skilled reviewer" being a resources that can review, identify or possibly perform a tasks on said documents based on certain criteria.
 
 ## Prerequisites
 
@@ -20,14 +19,31 @@ The Document Integration Platform  (DIP) is a framework to quickly build AI solu
 
 * A subscription key for [Form Recognizer](https://azure.microsoft.com/en-us/services/cognitive-services/form-recognizer/). Since Form Recognizer is still in Preview, access must be [requested](https://forms.office.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbRyj5DlT4gqZKgEsfbkRQK5xUMjZVRU02S1k4RUdLWjdKUkNRQVRRTDg1NC4u). Once access has been granted, create a form recognizer service and obtain the key.
 
-# Build
+## Build
+
+* Depending on your powershell settings, you will likely have to run the following command before running the setup script:
+
+       Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 * Run ./setup/scripts/setup.ps1.
 
-* A Microsoft login screen should appear. Sign in with the Azure account you want the application built in.
+* A Microsoft login screen should appear. Sign in with the Azure account you want the application built in. NOTE: the login screen occasionally appears behind other windows.
   
 * The powershell script will prompt you for:
   * Subscription Id: provide the id for the subscription you want the Azure resources created in.  
   * Form Recognizer key: provide the key for the Form Recognizer service you created.
 
+## Cleanup
 
+* Depending on your powershell settings, you will likely have to run the following command before running the cleanup script:
+
+       Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+* Run ./setup/scripts/cleanup.ps1.
+
+* The powershell script will prompt you for:
+  * Subscription Id: provide the id for the subscription you want the Azure resources deleted from.  
+  * Resource Group: the name of the resource group you want deleted.
+  * Force deletion:
+    * If you would like the script to delete the entire resource group without asking for your confirmation, enter "Y".
+    * If you would like the script to prompt you to confirm the deletion of each individual resource, enter "N".
