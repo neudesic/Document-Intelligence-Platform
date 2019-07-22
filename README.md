@@ -1,3 +1,9 @@
+* [Introduction](#introduction)
+* [Getting Started](#getting-started)
+* [Build](#build)
+* [Tear Down](#tear-down)
+
+
 # Introduction 
 The Document Integration Platform  (DIP) is a framework to quickly build AI solutions for document intensive use cases that requires a “skilled reviewer”, a "skilled reviewer" being a resources that can review, identify or possibly perform a tasks on said documents based on certain criteria.
 
@@ -14,7 +20,7 @@ The Document Integration Platform  (DIP) is a framework to quickly build AI solu
 
 * A subscription key for [Form Recognizer](https://azure.microsoft.com/en-us/services/cognitive-services/form-recognizer/). Since Form Recognizer is still in Preview, access must be [requested](https://forms.office.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbRyj5DlT4gqZKgEsfbkRQK5xUMjZVRU02S1k4RUdLWjdKUkNRQVRRTDg1NC4u). Once access has been granted, create a form recognizer service and obtain the key.
 
-# Build and Test
+# Build
 
 * Run ./setup/scripts/setup.ps1.
 

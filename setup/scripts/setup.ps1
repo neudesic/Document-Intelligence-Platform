@@ -92,16 +92,12 @@ $logicApp2ParametersFilePath = "$PSScriptRoot\..\templates\logic-app-2-parameter
 #----------------------------------------------------------------#
 
 
-$ErrorActionPreference = "Stop";
-$User = "db102010@icloud.com"
-$PWord = ConvertTo-SecureString -String "Tapper12" -AsPlainText -Force
-$Credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $User, $PWord
 
 
 # Sign In
 Write-Host Logging in...
 # Login-AzAccount
-Connect-AzAccount -Credential $Credential
+Connect-AzAccount 
 
 
 # Set Subscription Id
@@ -118,8 +114,8 @@ while ($TRUE) {
 }
 $index = 0
 $numbers = "123456789"
-foreach($char in $subscriptionId.ToCharArray()){
-    if($numbers.Contains($char)){
+foreach ($char in $subscriptionId.ToCharArray()) {
+    if ($numbers.Contains($char)) {
         break;
     }
     $index++
@@ -134,7 +130,13 @@ $functionAppProcess = $functionAppProcess + $id
 
 
 # Set Form Recognizer Key
-$formRecognizerKey = Read-Host -Prompt "Input form recognizer key"
+while ($TRUE) {
+    try {
+        $formRecognizerKey = Read-Host -Prompt "Input form recognizer key"
+        break;
+    }
+    catch {}
+}
 
 
 # Register Resource Providers
