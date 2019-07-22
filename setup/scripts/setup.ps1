@@ -92,12 +92,12 @@ $logicApp2ParametersFilePath = "$PSScriptRoot\..\templates\logic-app-2-parameter
 #----------------------------------------------------------------#
 
 
-
 $ErrorActionPreference = "Stop"
+
+
 # Sign In
 Write-Host Logging in...
-# Login-AzAccount
-Connect-AzAccount 
+Login-AzAccount 
 
 
 # Set Subscription Id
@@ -238,7 +238,6 @@ foreach ($info in $trainingInfo) {
 # Train Form Recognizer
 Write-Host Training Form Recognizer...
 # $formRecognizerKey = (Get-AzCognitiveServicesAccountKey -ResourceGroupName $resourceGroupName -Name $formRecognizerName).Key1
-$formRecognizerKey = "d101e49e27024fadb9c39824f48bf604"
 # $formRecognizerLocation = (Get-AzCognitiveServicesAccount -ResourceGroupName $resourceGroupName -Name $formRecognizerName).Location -replace '\s', ''
 $formRecognizerLocation = "westus2"
 $formRecognizerTrainUrl = "https://" + $formRecognizerLocation + ".api.cognitive.microsoft.com/formrecognizer/v1.0-preview/custom/train"
@@ -491,7 +490,7 @@ $logicApp1Parameters.enrich_resource_id.value = $enrichResourceId.Id
 $logicApp1Parameters.azureblob_resource_id.value = $azureblobResourceid.Id
 $logicApp1Parameters.documentdb_resource_id.value = $documentdbResourceId.Id
 $logicApp1Parameters.location.value = $location
-# $logicApp1Parameters.form_reco_key.value = $formRecognizerKey
+$logicApp1Parameters.form_reco_key.value = $formRecognizerKey
 $logicApp1Parameters.cosmos_db_name.value = $cosmosDatabaseName
 $logicApp1Parameters.cosmos_container_financial.value = $cosmosContainerFinancial
 $logicApp1Parameters.cosmos_container_financial_enriched.value = $cosmosContainerFinancialEnriched

@@ -14,10 +14,6 @@
 ##################################################################
 
 
-# Parameters
-$resourceGroupName = "DIP"
-
-
 # Sign In
 Write-Host Logging in...
 Connect-AzAccount
@@ -26,24 +22,58 @@ Connect-AzAccount
 # Set Subscription Id
 while ($TRUE) {
     try {
-      $subscriptionId = Read-Host -Prompt "Input subscription Id"
-      Set-AzContext `
-        -SubscriptionId $subscriptionId
-      break  
+        $subscriptionId = Read-Host -Prompt "Input subscription Id"
+        Set-AzContext `
+            -SubscriptionId $subscriptionId
+        break  
     }
     catch {
-      Write-Host Invalid subscription Id.`n
+        Write-Host Invalid subscription Id.`n
     }
+}
+
+
+# Set Resource Group
+while ($TRUE) {
+    try {
+        $resourceGroupName = Read-Host -Prompt "Input resource group"
+        break;
+    }
+    catch { }
+}
+
+
+# Force Deletion
+while ($TRUE) {
+    try {
+        $force = Read-Host -Prompt "Force deletion of resources (y/n)"
+        break;
+    }
+    catch { }
 }
 
 
 # Delete Resources.
-foreach($resourceId in (Get-AzResource -ResourceGroupName $resourceGroupName).Id) {
-    Remove-AzResource `
-        -ResourceId $resourceId `
-        # -Force
+foreach ($resourceId in (Get-AzResource -ResourceGroupName $resourceGroupName).Id) {
+    if (($force -eq "y") -or ($force -eq "Y") -or ($force -eq "yes") -or ($force -eq "Yes")) {
+        Remove-AzResource `
+            -ResourceId $resourceId `
+            -Force
+    } 
+    else {
+        Remove-AzResource `
+            -ResourceId $resourceId 
+    }
 }
 
 
-# Delete Resource Group.
-Remove-AzResourceGroup -Name $resourceGroupName
+# Delete Resource Group
+if (($force -eq "y") -or ($force -eq "Y") -or ($force -eq "yes") -or ($force -eq "Yes")) {
+    Remove-AzResourceGroup `
+        -Name $resourceGroupName `
+        -Force
+} 
+else {
+    Remove-AzResourceGroup `
+        -Name $resourceGroupName
+}
