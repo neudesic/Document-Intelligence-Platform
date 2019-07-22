@@ -93,7 +93,7 @@ $logicApp2ParametersFilePath = "$PSScriptRoot\..\templates\logic-app-2-parameter
 
 
 
-
+$ErrorActionPreference = "Stop"
 # Sign In
 Write-Host Logging in...
 # Login-AzAccount
