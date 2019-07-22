@@ -1,0 +1,45 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "logic_app_name": {
+            "value": "pleasework464"
+        },
+        "subscription_id": {
+            "value": "a66423e3-be36-4582-be44-ad3bc51c1c2e"
+        },
+        "shape_resource_id": {
+            "value": "/subscriptions/a66423e3-be36-4582-be44-ad3bc51c1c2e/resourceGroups/DIP-test/providers/Microsoft.Web/sites/shape364527"
+        },
+        "enrich_resource_id": {
+            "value": "/subscriptions/a66423e3-be36-4582-be44-ad3bc51c1c2e/resourceGroups/DIP-test/providers/Microsoft.Web/sites/enrich364527"
+        },
+        "azureblob_resource_id": {
+            "value": "/subscriptions/a66423e3-be36-4582-be44-ad3bc51c1c2e/resourceGroups/DIP-test/providers/Microsoft.Web/connections/azureblob"
+        },
+        "documentdb_resource_id": {
+            "value": "/subscriptions/a66423e3-be36-4582-be44-ad3bc51c1c2e/resourceGroups/DIP-test/providers/Microsoft.Web/connections/documentdb"
+        },
+        "location": {
+            "value": "eastus"
+        },
+        "form_reco_key": {
+            "value": "d101e49e27024fadb9c39824f48bf604"
+        },
+        "cosmos_db_name": {
+            "value": "dip-github-testing-db"
+        },
+        "cosmos_container_financial": {
+            "value": "financial-table"
+        },
+        "cosmos_container_financial_enriched": {
+            "value": "financial-table-enriched"
+        },
+        "cosmos_container_w2": {
+            "value": "w2-form"
+        },
+        "cosmos_container_w2_enriched": {
+            "value": "w2-form-enriched"
+        }
+    }
+}

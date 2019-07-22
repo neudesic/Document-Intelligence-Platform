@@ -1,0 +1,15 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location":{
+            "value": "eastus"
+        },
+        "cosmos_account_name": {
+            "value": "dipgithubtestinga6642"
+        },
+        "cosmos_access_key": {
+            "value": "eQxYiL9C1an+NvguTY6TxQool00AAE1OY9r2T2UIKkhvbUeccLuDBZQpjPZ4wcYx++FeFAkDNXI+G5ntrwDrlg=="
+        }
+    }
+}
