@@ -224,21 +224,21 @@ foreach ($info in $trainingInfo) {
 }
 
 
-# # Create Form Recognizer Account
-# Write-Host Creating Form Recognizer service...
-# New-AzCognitiveServicesAccount `
-#     -ResourceGroupName $resourceGroupName `
-#     -Name $formRecognizerName `
-#     -Type FormRecognizer `
-#     -SkuName F0 `
-#     -Location $formRecognizerLocation
-# Start-Sleep -s 5
+# Create Form Recognizer Account
+Write-Host Creating Form Recognizer service...
+New-AzCognitiveServicesAccount `
+    -ResourceGroupName $resourceGroupName `
+    -Name $formRecognizerName `
+    -Type FormRecognizer `
+    -SkuName F0 `
+    -Location $formRecognizerLocation
+Start-Sleep -s 5
 
 
 # Train Form Recognizer
 Write-Host Training Form Recognizer...
-# $formRecognizerKey = (Get-AzCognitiveServicesAccountKey -ResourceGroupName $resourceGroupName -Name $formRecognizerName).Key1
-# $formRecognizerLocation = (Get-AzCognitiveServicesAccount -ResourceGroupName $resourceGroupName -Name $formRecognizerName).Location -replace '\s', ''
+$formRecognizerKey = (Get-AzCognitiveServicesAccountKey -ResourceGroupName $resourceGroupName -Name $formRecognizerName).Key1
+$formRecognizerLocation = (Get-AzCognitiveServicesAccount -ResourceGroupName $resourceGroupName -Name $formRecognizerName).Location -replace '\s', ''
 $formRecognizerLocation = "westus2"
 $formRecognizerTrainUrl = "https://" + $formRecognizerLocation + ".api.cognitive.microsoft.com/formrecognizer/v1.0-preview/custom/train"
 $formRecognizeHeader = @{
