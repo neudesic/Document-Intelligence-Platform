@@ -2,6 +2,9 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+        "subscription_id":{
+            "type": "securestring"
+        },
         "connections_azureblob_name": {
             "defaultValue": "azureblob",
             "type": "string"
@@ -27,7 +30,7 @@
                 "displayName": "azureblob",
                 "customParameterValues": {},
                 "api": {
-                    "id": "[concat('/subscriptions/a66423e3-be36-4582-be44-ad3bc51c1c2e/providers/Microsoft.Web/locations/eastus/managedApis/', parameters('connections_azureblob_name'))]"
+                    "id": "[concat('/subscriptions/', parameters('subscription_id'), '/providers/Microsoft.Web/locations/eastus/managedApis/', parameters('connections_azureblob_name'))]"
                 },
                 "parameterValues": {
                     "accountName": "[parameters('storage_account_name')]",

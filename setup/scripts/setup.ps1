@@ -59,7 +59,7 @@ $formRecognizerName = $prefixLowCaseNoDashes + "formreco"
 $formRecognizerLocation = "West US 2"
 
 # app service plan
-$appServicePlanName = "364527"
+$appServicePlanName = $prefix + "-asp"
 $webAppName = $prefix + "-wa"
 
 # function app
@@ -127,16 +127,6 @@ $webAppName = $webAppName + $id
 $functionAppShape = $functionAppShape + $id
 $functionAppEnrich = $functionAppEnrich + $id
 $functionAppProcess = $functionAppProcess + $id
-
-
-# Set Form Recognizer Key
-while ($TRUE) {
-    try {
-        $formRecognizerKey = Read-Host -Prompt "Input form recognizer key"
-        break;
-    }
-    catch {}
-}
 
 
 # Register Resource Providers
@@ -239,7 +229,6 @@ Start-Sleep -s 5
 Write-Host Training Form Recognizer...
 $formRecognizerKey = (Get-AzCognitiveServicesAccountKey -ResourceGroupName $resourceGroupName -Name $formRecognizerName).Key1
 $formRecognizerLocation = (Get-AzCognitiveServicesAccount -ResourceGroupName $resourceGroupName -Name $formRecognizerName).Location -replace '\s', ''
-$formRecognizerLocation = "westus2"
 $formRecognizerTrainUrl = "https://" + $formRecognizerLocation + ".api.cognitive.microsoft.com/formrecognizer/v1.0-preview/custom/train"
 $formRecognizeHeader = @{
     "Ocp-Apim-Subscription-Key" = $formRecognizerKey
@@ -422,11 +411,12 @@ foreach ($info in $functionAppInformation) {
 
     
 # Deploy API Connections
-$azureblobParametersTemplate = Get-Content $azureblobParametersFilePath | ConvertFrom-Json
-$azureblobParameters = $azureblobParametersTemplate.parameters
 $storageAccountKey = (Get-AzStorageAccountKey `
         -ResourceGroupName $resourceGroupName `
         -AccountName $storageAccountName).Value[0]
+$azureblobParametersTemplate = Get-Content $azureblobParametersFilePath | ConvertFrom-Json
+$azureblobParameters = $azureblobParametersTemplate.parameters
+$azureblobParameters.subscription_id.value = $subscriptionId
 $azureblobParameters.storage_account_name.value = $storageAccountName
 $azureblobParameters.storage_access_key.value = $storageAccountKey
 $azureblobParameters.location.value = $location
@@ -441,6 +431,7 @@ $cosmosAccessKey = Invoke-AzResourceAction `
     -Name $cosmosAccountName | Select-Object * 
 $documentdbParametersTemplate = Get-Content $documentdbParametersFilePath | ConvertFrom-Json
 $documentdbParameters = $documentdbParametersTemplate.parameters
+$documentdbParameters.subscription_id.value = $subscriptionId
 $documentdbParameters.location.value = $location
 $documentdbParameters.cosmos_account_name.value = $cosmosAccountName
 $documentdbParameters.cosmos_access_key.value = $cosmosAccessKey.primaryMasterKey
@@ -528,7 +519,6 @@ New-AzResourceGroupDeployment `
 
 # Process Documents
 Write-Host  Deploying documents...`n
-# $formModels = @{$storageContainerFinancial = "cd9b8e09-4f52-4997-a2aa-74ffcbfffb2b"; $storageContainerW2 = "d49ea06b-cabe-4c92-ab85-bf753c24e2f7" }
 $runInformation = @(
     ($storageContainerFinancial, $formRecognizerModels[$storageContainerFinancialTraining], "Financial Table"),
     ($storageContainerW2, $formRecognizerModels[$storageContainerW2Training], "W2")
