@@ -133,6 +133,10 @@ $functionAppEnrich = $functionAppEnrich + $id
 $functionAppProcess = $functionAppProcess + $id
 
 
+# Set Form Recognizer Key
+$formRecognizerKey = Read-Host -Prompt "Input form recognizer key"
+
+
 # Register Resource Providers
 Write-Host Registering resource providers:`n
 foreach ($resourceProvider in $resourceProviders) {
