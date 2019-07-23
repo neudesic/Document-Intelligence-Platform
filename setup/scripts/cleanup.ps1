@@ -14,6 +14,10 @@
 ##################################################################
 
 
+# Parameters
+$resourceGroupName = "DIP"
+
+
 # Sign In
 Write-Host Logging in...
 Connect-AzAccount
@@ -30,16 +34,6 @@ while ($TRUE) {
     catch {
         Write-Host Invalid subscription Id.`n
     }
-}
-
-
-# Set Resource Group
-while ($TRUE) {
-    try {
-        $resourceGroupName = Read-Host -Prompt "Input resource group"
-        break;
-    }
-    catch { }
 }
 
 

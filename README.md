@@ -41,7 +41,6 @@ The Document Integration Platform  (DIP) is a framework to quickly build AI solu
 
 * The powershell script will prompt you for:
   * Subscription Id: provide the id for the subscription you want the Azure resources deleted from.  
-  * Resource Group: the name of the resource group you want deleted.
   * Force deletion:
     * If you would like the script to delete the entire resource group without asking for your confirmation, enter "Y".
     * If you would like the script to prompt you to confirm the deletion of each individual resource, enter "N".
