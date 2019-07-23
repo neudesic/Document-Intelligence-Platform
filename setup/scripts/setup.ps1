@@ -222,7 +222,7 @@ New-AzCognitiveServicesAccount `
     -Type FormRecognizer `
     -SkuName F0 `
     -Location $formRecognizerLocation
-Start-Sleep -s 5
+Start-Sleep -s 10
 
 
 # Train Form Recognizer
@@ -248,8 +248,7 @@ foreach ($containerName in $storageContainerTraining) {
 # Create Cosmos SQL API Account
 Write-Host Creating CosmosDB account...
 $cosmosLocations = @(
-    @{ "locationName" = "West US"; "failoverPriority" = 0 },
-    @{ "locationName" = "East US"; "failoverPriority" = 1 }
+    @{ "locationName" = "East US"; "failoverPriority" = 0 }
 )
 
 $consistencyPolicy = @{
