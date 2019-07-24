@@ -37,7 +37,7 @@ while ($TRUE) {
 }
 
 
-# Force Deletion
+# Set Force Deletion
 while ($TRUE) {
     try {
         $force = Read-Host -Prompt "Force deletion of resources (y/n)"
@@ -47,27 +47,20 @@ while ($TRUE) {
 }
 
 
-# Delete Resources.
-foreach ($resourceId in (Get-AzResource -ResourceGroupName $resourceGroupName).Id) {
-    if (($force -eq "y") -or ($force -eq "Y") -or ($force -eq "yes") -or ($force -eq "Yes")) {
-        Remove-AzResource `
-            -ResourceId $resourceId `
-            -Force
-    } 
-    else {
-        Remove-AzResource `
-            -ResourceId $resourceId 
-    }
-}
-
-
-# Delete Resource Group
+# Delete Resources
 if (($force -eq "y") -or ($force -eq "Y") -or ($force -eq "yes") -or ($force -eq "Yes")) {
     Remove-AzResourceGroup `
         -Name $resourceGroupName `
         -Force
-} 
+}
 else {
+    foreach ($resourceId in (Get-AzResource -ResourceGroupName $resourceGroupName).Id) {
+        try {
+            Remove-AzResource `
+                -ResourceId $resourceId 
+        }
+        catch { }
+    }
     Remove-AzResourceGroup `
         -Name $resourceGroupName
 }
