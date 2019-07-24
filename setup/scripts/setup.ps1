@@ -304,7 +304,7 @@ foreach ($containerName in $cosmosContainerNames) {
                 "kind"  = "Hash"
             }; 
         };
-        "options"  = @{ "Throughput" = 400 }
+        "options"  = @{ }
     } 
     $containerResourceName = $cosmosAccountName + "/sql/" + $cosmosDatabaseName + "/" + $containerName
 
