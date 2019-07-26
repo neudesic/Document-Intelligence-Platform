@@ -277,7 +277,7 @@ Start-Sleep -s 5
 Write-Host Creating CosmosDB Database...
 $cosmosDatabaseProperties = @{
     "resource" = @{ "id" = $cosmosDatabaseName };
-    "options"  = @{ "Throughput" = 400 }
+    "options"  = @{ "Throughput" = 500 }
 } 
 $cosmosResourceName = $cosmosAccountName + "/sql/" + $cosmosDatabaseName
 New-AzResource `
