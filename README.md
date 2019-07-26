@@ -5,11 +5,12 @@
   * [Example Use Case](#example-use-case)
     * [Problem](#problem)
     * [Solution](#solution)
-  * [DIP Specifics](#solution-specifics)
-* [Prerequisites](#prerequisites)
+  * [DIP Specifics](#dip-specifics)
 * [Build](#build)
-* [Results](#results)
-* [Cleanup](#cleanup)
+  * [Prerequisites](#prerequisites)
+  * [Run](#run)
+  * [Results](#results)
+  * [Cleanup](#cleanup)
 
 # Introduction 
 
