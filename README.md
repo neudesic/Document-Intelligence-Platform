@@ -48,7 +48,7 @@ Microsoft Azure AI, Machine Learning, and Storage can help address this challeng
 
 Setting up such a solution involves three major stages:
 
-![](./readme-images/flowchart.png)
+![](https://imgur.com/AqNgzbz.png)
 
 1. Setting up the Azure platform. This stage is relatively simple and does not require too much technical knowledge.
 
@@ -58,7 +58,7 @@ Setting up such a solution involves three major stages:
 
 The complete solution is a **Cognitive Solution**. A cognitive solution transforms unstructured data into insights and actions that solve business problems. The unstructured data goes through ingestion, enrichment, analysis, and insights.
 <br>  
-![](./readme-images/orchestration-engine.png)
+![](https://imgur.com/UIcGJTa.png)
 <br>
 
 
@@ -114,7 +114,7 @@ The Document Intelligence Platform (**DIP**) is a manifestation of the solution 
   * processed:
     * Contains yearly spending forecasts (percentage of yearly income spent on various expenses as well as forecasted net expenditure).
   * w2-form:
-    * Contains relevant key-value pairs from the w2 forms.
+    * Contains relevant key-value pairs from the W2 forms.
   * w2-form-enriched:
     * Contains an applicant's calculated disposable income.
 
