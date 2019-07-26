@@ -27,7 +27,7 @@ In order to do so Jim must:
 
 * Organize and validate a variety of documents
 
-* Create Company standard KPI's
+* Create company standard KPIs
 
 * Calculate a risk score
 
