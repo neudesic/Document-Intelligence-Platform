@@ -24,7 +24,6 @@ $prefix = "dip-github"
 $prefixLowCaseNoDashes = "dipgithub"
 
 # logistics
-$subscriptionId = "a66423e3-be36-4582-be44-ad3bc51c1c2e"
 $location = "eastus";
 $resourceGroupName = "DIP"
 $resourceProviders = @(
@@ -74,17 +73,17 @@ $filePathProcess = "$PSScriptRoot\..\functions\processfunc.zip"
 $documentdbName = "documentdb"
 $azureblobName = "azureblob"
 $documentdbTemplateFilePath = "$PSScriptRoot\..\templates\document-db-template.json"
-$documentdbParametersFilePath = "$PSScriptRoot\..\templates\document-db-parameters-test.json"
+$documentdbParametersFilePath = "$PSScriptRoot\..\templates\document-db-parameters.json"
 $azureblobTemplateFilePath = "$PSScriptRoot\..\templates\azure-blob-template.json"
-$azureblobParametersFilePath = "$PSScriptRoot\..\templates\azure-blob-parameters-test.json"
+$azureblobParametersFilePath = "$PSScriptRoot\..\templates\azure-blob-parameters.json"
 
 # logic app
 $logicApp1Name = "logicapp1"
 $logicApp2Name = "logicapp2"
 $logicApp1TemplateFilePath = "$PSScriptRoot\..\templates\logic-app-1-template.json"
 $logicApp2TemplateFilePath = "$PSScriptRoot\..\templates\logic-app-2-template.json"
-$logicApp1ParametersFilePath = "$PSScriptRoot\..\templates\logic-app-1-parameters-test.json"
-$logicApp2ParametersFilePath = "$PSScriptRoot\..\templates\logic-app-2-parameters-test.json"
+$logicApp1ParametersFilePath = "$PSScriptRoot\..\templates\logic-app-1-parameters.json"
+$logicApp2ParametersFilePath = "$PSScriptRoot\..\templates\logic-app-2-parameters.json"
 
 
 #----------------------------------------------------------------#

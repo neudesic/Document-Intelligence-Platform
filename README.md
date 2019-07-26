@@ -8,6 +8,7 @@
   * [DIP Specifics](#solution-specifics)
 * [Prerequisites](#prerequisites)
 * [Build](#build)
+* [Results](#results)
 * [Cleanup](#cleanup)
 
 # Introduction 
@@ -17,6 +18,8 @@ The Document Intelligence Platform  (DIP) is a framework to quickly build AI sol
 # Overview
 
 ## Example Use Case
+
+### Problem
 
 Jim is a mortgage loan officer. He is responsible for processing mortgage applications.
 In order to do so Jim must:
@@ -29,13 +32,11 @@ In order to do so Jim must:
 
 * Approve or reject the application
 
-### Problem
-
 Jim is skilled at what he does. His time is best spent analyzing relevant and organized information. However Jim faces a major challenge. The majority of his time is spent ingesting, organizing and extracting information from documents.
 
 ### Solution
 
-Microsoft Azure AI, Machine Learning, and storage can help address this challenge by automating the:
+Microsoft Azure AI, Machine Learning, and Storage can help address this challenge by automating the:
 
 * Classification of documents
 
@@ -47,7 +48,7 @@ Microsoft Azure AI, Machine Learning, and storage can help address this challeng
 
 Setting up such a solution involves three major stages:
 
-![](./images/flowchart.png)
+![](./readme-images/flowchart.png)
 
 1. Setting up the Azure platform. This stage is relatively simple and does not require too much technical knowledge.
 
@@ -57,7 +58,7 @@ Setting up such a solution involves three major stages:
 
 The complete solution is a **Cognitive Solution**. A cognitive solution transforms unstructured data into insights and actions that solve business problems. The unstructured data goes through ingestion, enrichment, analysis, and insights.
 <br>  
-![](./images/orchestration-engine.png)
+![](./readme-images/orchestration-engine.png)
 <br>
 
 
@@ -70,12 +71,11 @@ The Document Intelligence Platform (**DIP**) is a manifestation of the solution 
 * Receives unstructured data such as financial tables and W2 forms as input and stores it in the cloud.
 
 * Ingestion
-  * Utilizes AI models to extract key-value pairs, text, and tables from the documents.
+  * Uploads the unstructured data to blob containers within cloud storage.
 * Enrichment
-  * Shapes the data and stores it in database collections.
+  * Utilizes AI models to extract key-value pairs, text, and tables from the documents. Shapes the data and stores it in database collections.
 * Analysis
   * Processes the data from the various documents of a single applicant and produces new metrics such as spending forecasts and ratings.
-* Insights
 
 # Build
 
@@ -88,7 +88,7 @@ The Document Intelligence Platform (**DIP**) is a manifestation of the solution 
 * [Az Powershell Module](https://docs.microsoft.com/en-us/powershell/azure/install-az-ps?view=azps-2.4.0)
   * You can't have both the AzureRM and Az modules installed for PowerShell 5.1 for Windows at the same time. If you need to keep AzureRM available on your system, install the Az module for [PowerShell Core 6.x](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-core-on-windows?view=powershell-6) or later.
 
-* A subscription to [Form Recognizer](https://azure.microsoft.com/en-us/services/cognitive-services/form-recognizer/). Since Form Recognizer is still in Preview, access must be [requested](https://forms.office.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbRyj5DlT4gqZKgEsfbkRQK5xUMjZVRU02S1k4RUdLWjdKUkNRQVRRTDg1NC4u). Once access has been granted, continue to the [Build](#build) section.
+* A subscription to [Form Recognizer](https://azure.microsoft.com/en-us/services/cognitive-services/form-recognizer/). Since Form Recognizer is still in Preview, access must be [requested](https://forms.office.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbRyj5DlT4gqZKgEsfbkRQK5xUMjZVRU02S1k4RUdLWjdKUkNRQVRRTDg1NC4u). Once access has been granted, continue to the [Run](#run) section.
 
 ## Run
 
@@ -101,6 +101,23 @@ The Document Intelligence Platform (**DIP**) is a manifestation of the solution 
 * A Microsoft login screen should appear. Sign in with the Azure account you want the application built in. NOTE: the login screen occasionally appears behind other windows.
   
 * The powershell script will prompt you for a subscription Id. Provide the id to the subscription you want the Azure resources created in.
+
+## Results
+
+* The results of the script can be found in the Cosmos DB Data Explorer. To access Data Explorer, open your Azure Portal and navigate to the Cosmos DB page. Click on your Cosmos DB account and a link to Data Explorer should appear along the side menu.
+
+* There will be five containers within your database:
+  * financial-table
+    * Contains relevant key-value pairs from the financial table documents.
+  * financial-table-enriched
+    * Contains financial ratings related to the percentage of monthly income spent on various expenses.
+  * processed:
+    * Contains yearly spending forecasts (percentage of yearly income spent on various expenses as well as forecasted net expenditure).
+  * w2-form:
+    * Contains relevant key-value pairs from the w2 forms.
+  * w2-form-enriched:
+    * Contains an applicant's calculated disposable income.
+
 
 ## Cleanup
 
