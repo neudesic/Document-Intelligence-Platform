@@ -43,6 +43,7 @@ $storageContainerFinancial = "financial-table"
 $storageContainerFinancialTraining = "training-financial-table"
 $blobsFilePath = "$PSScriptRoot\..\..\blobs\"
 $trainingFilePath = "$PSScriptRoot\..\..\training-data\"
+$angularConfigFilePath = "$PSScriptRoot\..\..\blobs\angular-app\assets\config.json"
 
 # cosmos resources
 $cosmosDatabaseName = $prefix + "-db"
@@ -171,6 +172,13 @@ $storageContext = $storageAccount.Context
 Start-Sleep -s 5
 
 
+Enable-AzStorageStaticWebsite `
+    -Context $storageContext `
+    -IndexDocument "index.html" `
+    -ErrorDocument404Path "error.html"
+$websiteUrl = $storageAccount.PrimaryEndpoints.Web
+
+
 # Create Storage Containers
 Write-Host Creating blob containers...
 $storageContainerNames = @($storageContainerW2, $storageContainerW2Training, $storageContainerFinancial, $storageContainerFinancialTraining)
@@ -190,19 +198,56 @@ foreach ($containerName in $storageContainerNames) {
 Start-Sleep -s 5
 
 
+# Populate Angular Configuration File
+$angularConfig = Get-Content $angularConfigFilePath | ConvertFrom-Json
+$angularConfig.cosmosAccount = $cosmosAccountName
+$angularConfig.storageAccount = $storageAccountName
+$angularConfig | ConvertTo-Json | Out-File $angularConfigFilePath
+
+
 # Upload Blobs And Training Data
 Write-Host Uploading blobs and training documents...`n
 $trainingInfo = @(
     (($blobsFilePath + "w2-form/"), $storageContainerW2), `
     (($blobsFilePath + "financial-table/"), $storageContainerFinancial), `
     (($trainingFilePath + "w2-form/"), $storageContainerW2Training), `
-    (($trainingFilePath + "financial-table/"), $storageContainerFinancialTraining))
+    (($trainingFilePath + "financial-table/"), $storageContainerFinancialTraining),
+    (($blobsFilePath + "angular-app/"), "`$web")
+)
 foreach ($info in $trainingInfo) {
     $filePath = $info[0]
     $containerName = $info[1]
     $files = Get-ChildItem $filePath
     foreach ($file in $files) {
         Write-Host - Uploading $file.Name
+        if ($file.Name -eq "assets") {
+            Get-ChildItem ($filePath + $file.Name) | set-AzStorageblobcontent `
+                -Container $containerName `
+                -Blob 'config.json' `
+                -Context $storageContext `
+                -Force
+            continue
+        }
+        if (($file | Select-Object Extension).Extension -eq '.html') {
+            set-AzStorageblobcontent `
+                -File ($filePath + $file.Name) `
+                -Container $containerName `
+                -Blob $file.Name `
+                -Context $storageContext `
+                -Properties @{"ContentType" = "text/html" } `
+                -Force
+            continue
+        }
+        if (($file | Select-Object Extension).Extension -eq '.css') {
+            set-AzStorageblobcontent `
+                -File ($filePath + $file.Name) `
+                -Container $containerName `
+                -Blob $file.Name `
+                -Context $storageContext `
+                -Properties @{"ContentType" = "text/css" } `
+                -Force
+            continue
+        }
         set-AzStorageblobcontent `
             -File ($filePath + $file.Name) `
             -Container $containerName `
@@ -273,6 +318,7 @@ New-AzResource `
 Start-Sleep -s 5
 
 
+
 # Create Cosmos Database
 Write-Host Creating CosmosDB Database...
 $cosmosDatabaseProperties = @{
@@ -325,22 +371,6 @@ New-AzAppServicePlan `
     -ResourceGroupName $resourceGroupName `
     -Tier Free
 Start-Sleep -s 5
-
-
-# Create Web App
-try {
-    Write-Host Creating web app...
-    Get-AzWebApp `
-        -ResourceGroupName $resourceGroupName `
-        -Name $webAppName
-}
-catch {
-    New-AzWebApp `
-        -ResourceGroupName $resourceGroupName `
-        -Name $webAppName `
-        -Location $location `
-        -AppServicePlan $appServicePlanName
-}
 
 
 # Azure Functions
@@ -576,4 +606,5 @@ foreach ($file in $container) {
 }
 
 
-Write-Host  Deployment complete.
+Write-Host Deployment complete.
+Write-Host Navigate to: $websiteUrl
