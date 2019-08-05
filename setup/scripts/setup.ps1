@@ -152,6 +152,79 @@ Start-Sleep -s 5
 #----------------------------------------------------------------#
 
 
+# Create Cosmos SQL API Account
+Write-Host Creating CosmosDB account...
+$cosmosLocations = @(
+    @{ "locationName" = "East US"; "failoverPriority" = 0 }
+)
+
+$consistencyPolicy = @{
+    "defaultConsistencyLevel" = "BoundedStaleness";
+    "maxIntervalInSeconds"    = 300;
+    "maxStalenessPrefix"      = 100000
+}
+
+$cosmosProperties = @{
+    "databaseAccountOfferType"     = "standard";
+    "locations"                    = $cosmosLocations;
+    "consistencyPolicy"            = $consistencyPolicy;
+    "enableMultipleWriteLocations" = "true"
+}
+New-AzResource `
+    -ResourceType "Microsoft.DocumentDb/databaseAccounts" `
+    -ApiVersion "2015-04-08" `
+    -ResourceGroupName $resourceGroupName `
+    -Location $location `
+    -Name $cosmosAccountName `
+    -PropertyObject $cosmosProperties `
+    -Force
+Start-Sleep -s 5
+
+
+# Create Cosmos Database
+Write-Host Creating CosmosDB Database...
+$cosmosDatabaseProperties = @{
+    "resource" = @{ "id" = $cosmosDatabaseName };
+    "options"  = @{ "Throughput" = 500 }
+} 
+$cosmosResourceName = $cosmosAccountName + "/sql/" + $cosmosDatabaseName
+New-AzResource `
+    -ResourceType "Microsoft.DocumentDb/databaseAccounts/apis/databases" `
+    -ApiVersion "2015-04-08" `
+    -ResourceGroupName $resourceGroupName `
+    -Name $cosmosResourceName `
+    -PropertyObject $cosmosDatabaseProperties `
+    -Force
+Start-Sleep -s 5
+
+
+# Create Cosmos Containers
+Write-Host Creating CosmosDB Containers...
+$cosmosContainerNames = @($cosmosContainerFinancial, $cosmosContainerFinancialEnriched, 
+    $cosmosContainerW2, $cosmosContainerW2Enriched, $cosmosContainerProcessed)
+foreach ($containerName in $cosmosContainerNames) {
+    $cosmosContainerProperties = @{
+        "resource" = @{
+            "id"           = $containerName; 
+            "partitionKey" = @{
+                "paths" = @("/id"); 
+                "kind"  = "Hash"
+            }; 
+        };
+        "options"  = @{ }
+    } 
+    $containerResourceName = $cosmosAccountName + "/sql/" + $cosmosDatabaseName + "/" + $containerName
+
+    New-AzResource `
+        -ResourceType "Microsoft.DocumentDb/databaseAccounts/apis/databases/containers" `
+        -ApiVersion "2015-04-08" `
+        -ResourceGroupName $resourceGroupName `
+        -Name $containerResourceName `
+        -PropertyObject $cosmosContainerProperties `
+        -Force 
+}
+
+
 # Create Storage Account
 try {
     Write-Host Creating storage account...
@@ -172,6 +245,7 @@ $storageContext = $storageAccount.Context
 Start-Sleep -s 5
 
 
+# Configure Storage Account
 Enable-AzStorageStaticWebsite `
     -Context $storageContext `
     -IndexDocument "index.html" `
@@ -199,9 +273,17 @@ Start-Sleep -s 5
 
 
 # Populate Angular Configuration File
+$cosmosAccessKey = Invoke-AzResourceAction `
+    -Action listKeys `
+    -ResourceType "Microsoft.DocumentDb/databaseAccounts" `
+    -ApiVersion "2015-04-08" `
+    -ResourceGroupName $resourceGroupName `
+    -Force `
+    -Name $cosmosAccountName | Select-Object * 
 $angularConfig = Get-Content $angularConfigFilePath | ConvertFrom-Json
 $angularConfig.cosmosAccount = $cosmosAccountName
 $angularConfig.storageAccount = $storageAccountName
+$angularConfig.cosmosAccessKey = $cosmosAccessKey.primaryMasterKey
 $angularConfig | ConvertTo-Json | Out-File $angularConfigFilePath
 
 
@@ -286,80 +368,6 @@ foreach ($containerName in $storageContainerTraining) {
     $response = Invoke-RestMethod -Method Post -Uri $formRecognizerTrainUrl -ContentType "application/json" -Headers $formRecognizeHeader -Body $body
     $response
     $formRecognizerModels[$containerName] = $response.modelId
-}
-
-
-# Create Cosmos SQL API Account
-Write-Host Creating CosmosDB account...
-$cosmosLocations = @(
-    @{ "locationName" = "East US"; "failoverPriority" = 0 }
-)
-
-$consistencyPolicy = @{
-    "defaultConsistencyLevel" = "BoundedStaleness";
-    "maxIntervalInSeconds"    = 300;
-    "maxStalenessPrefix"      = 100000
-}
-
-$cosmosProperties = @{
-    "databaseAccountOfferType"     = "standard";
-    "locations"                    = $cosmosLocations;
-    "consistencyPolicy"            = $consistencyPolicy;
-    "enableMultipleWriteLocations" = "true"
-}
-New-AzResource `
-    -ResourceType "Microsoft.DocumentDb/databaseAccounts" `
-    -ApiVersion "2015-04-08" `
-    -ResourceGroupName $resourceGroupName `
-    -Location $location `
-    -Name $cosmosAccountName `
-    -PropertyObject $cosmosProperties `
-    -Force
-Start-Sleep -s 5
-
-
-
-# Create Cosmos Database
-Write-Host Creating CosmosDB Database...
-$cosmosDatabaseProperties = @{
-    "resource" = @{ "id" = $cosmosDatabaseName };
-    "options"  = @{ "Throughput" = 500 }
-} 
-$cosmosResourceName = $cosmosAccountName + "/sql/" + $cosmosDatabaseName
-New-AzResource `
-    -ResourceType "Microsoft.DocumentDb/databaseAccounts/apis/databases" `
-    -ApiVersion "2015-04-08" `
-    -ResourceGroupName $resourceGroupName `
-    -Name $cosmosResourceName `
-    -PropertyObject $cosmosDatabaseProperties `
-    -Force
-Start-Sleep -s 5
-
-
-# Create Cosmos Container
-Write-Host Creating CosmosDB Containers...
-$cosmosContainerNames = @($cosmosContainerFinancial, $cosmosContainerFinancialEnriched, 
-    $cosmosContainerW2, $cosmosContainerW2Enriched, $cosmosContainerProcessed)
-foreach ($containerName in $cosmosContainerNames) {
-    $cosmosContainerProperties = @{
-        "resource" = @{
-            "id"           = $containerName; 
-            "partitionKey" = @{
-                "paths" = @("/id"); 
-                "kind"  = "Hash"
-            }; 
-        };
-        "options"  = @{ }
-    } 
-    $containerResourceName = $cosmosAccountName + "/sql/" + $cosmosDatabaseName + "/" + $containerName
-
-    New-AzResource `
-        -ResourceType "Microsoft.DocumentDb/databaseAccounts/apis/databases/containers" `
-        -ApiVersion "2015-04-08" `
-        -ResourceGroupName $resourceGroupName `
-        -Name $containerResourceName `
-        -PropertyObject $cosmosContainerProperties `
-        -Force 
 }
 
 
@@ -450,13 +458,6 @@ $azureblobParameters.storage_access_key.value = $storageAccountKey
 $azureblobParameters.location.value = $location
 $azureblobParametersTemplate | ConvertTo-Json | Out-File $azureblobParametersFilePath
 
-$cosmosAccessKey = Invoke-AzResourceAction `
-    -Action listKeys `
-    -ResourceType "Microsoft.DocumentDb/databaseAccounts" `
-    -ApiVersion "2015-04-08" `
-    -ResourceGroupName $resourceGroupName `
-    -Force `
-    -Name $cosmosAccountName | Select-Object * 
 $documentdbParametersTemplate = Get-Content $documentdbParametersFilePath | ConvertFrom-Json
 $documentdbParameters = $documentdbParametersTemplate.parameters
 $documentdbParameters.subscription_id.value = $subscriptionId
