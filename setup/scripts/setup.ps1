@@ -43,6 +43,7 @@ $storageContainerFinancial = "financial-table"
 $storageContainerFinancialTraining = "training-financial-table"
 $blobsFilePath = "$PSScriptRoot\..\..\blobs\"
 $trainingFilePath = "$PSScriptRoot\..\..\training-data\"
+$angularConfigFilePath = "$PSScriptRoot\..\..\blobs\angular-app\assets\config.json"
 
 # cosmos resources
 $cosmosDatabaseName = $prefix + "-db"
@@ -151,99 +152,6 @@ Start-Sleep -s 5
 #----------------------------------------------------------------#
 
 
-# Create Storage Account
-try {
-    Write-Host Creating storage account...
-    $storageAccount = Get-AzStorageAccount `
-        -ResourceGroupName $resourceGroupName `
-        -AccountName $storageAccountName
-}
-catch {
-    $storageAccount = New-AzStorageAccount `
-        -AccountName $storageAccountName `
-        -ResourceGroupName $resourceGroupName `
-        -Location $location `
-        -SkuName Standard_LRS `
-        -Kind StorageV2 
-}
-$storageAccount
-$storageContext = $storageAccount.Context
-Start-Sleep -s 5
-
-
-# Create Storage Containers
-Write-Host Creating blob containers...
-$storageContainerNames = @($storageContainerW2, $storageContainerW2Training, $storageContainerFinancial, $storageContainerFinancialTraining)
-foreach ($containerName in $storageContainerNames) {
-    try {
-        Get-AzStorageContainer `
-            -Name $containerName `
-            -Context $storageContext
-    }
-    catch {
-        new-AzStoragecontainer `
-            -Name $containerName `
-            -Context $storageContext `
-            -Permission container
-    }
-}
-Start-Sleep -s 5
-
-
-# Upload Blobs And Training Data
-Write-Host Uploading blobs and training documents...`n
-$trainingInfo = @(
-    (($blobsFilePath + "w2-form/"), $storageContainerW2), `
-    (($blobsFilePath + "financial-table/"), $storageContainerFinancial), `
-    (($trainingFilePath + "w2-form/"), $storageContainerW2Training), `
-    (($trainingFilePath + "financial-table/"), $storageContainerFinancialTraining))
-foreach ($info in $trainingInfo) {
-    $filePath = $info[0]
-    $containerName = $info[1]
-    $files = Get-ChildItem $filePath
-    foreach ($file in $files) {
-        Write-Host - Uploading $file.Name
-        set-AzStorageblobcontent `
-            -File ($filePath + $file.Name) `
-            -Container $containerName `
-            -Blob $file.Name `
-            -Context $storageContext `
-            -Force
-    }
-}
-
-
-# Create Form Recognizer Account
-Write-Host Creating Form Recognizer service...
-New-AzCognitiveServicesAccount `
-    -ResourceGroupName $resourceGroupName `
-    -Name $formRecognizerName `
-    -Type FormRecognizer `
-    -SkuName F0 `
-    -Location $formRecognizerLocation
-Start-Sleep -s 10
-
-
-# Train Form Recognizer
-Write-Host Training Form Recognizer...
-$formRecognizerKey = (Get-AzCognitiveServicesAccountKey -ResourceGroupName $resourceGroupName -Name $formRecognizerName).Key1
-$formRecognizerLocation = (Get-AzCognitiveServicesAccount -ResourceGroupName $resourceGroupName -Name $formRecognizerName).Location -replace '\s', ''
-$formRecognizerTrainUrl = "https://" + $formRecognizerLocation + ".api.cognitive.microsoft.com/formrecognizer/v1.0-preview/custom/train"
-$formRecognizeHeader = @{
-    "Ocp-Apim-Subscription-Key" = $formRecognizerKey
-}
-
-$formRecognizerModels = @{ }
-$storageContainerTraining = @($storageContainerW2Training, $storageContainerFinancialTraining)
-foreach ($containerName in $storageContainerTraining) {
-    $storageContainerUrl = (Get-AzStorageContainer -Context $storageContext -Name $containerName).CloudBlobContainer.Uri.AbsoluteUri
-    $body = "{`"source`": `"$($storageContainerUrl)`"}"
-    $response = Invoke-RestMethod -Method Post -Uri $formRecognizerTrainUrl -ContentType "application/json" -Headers $formRecognizeHeader -Body $body
-    $response
-    $formRecognizerModels[$containerName] = $response.modelId
-}
-
-
 # Create Cosmos SQL API Account
 Write-Host Creating CosmosDB account...
 $cosmosLocations = @(
@@ -290,7 +198,7 @@ New-AzResource `
 Start-Sleep -s 5
 
 
-# Create Cosmos Container
+# Create Cosmos Containers
 Write-Host Creating CosmosDB Containers...
 $cosmosContainerNames = @($cosmosContainerFinancial, $cosmosContainerFinancialEnriched, 
     $cosmosContainerW2, $cosmosContainerW2Enriched, $cosmosContainerProcessed)
@@ -317,6 +225,152 @@ foreach ($containerName in $cosmosContainerNames) {
 }
 
 
+# Create Storage Account
+try {
+    Write-Host Creating storage account...
+    $storageAccount = Get-AzStorageAccount `
+        -ResourceGroupName $resourceGroupName `
+        -AccountName $storageAccountName
+}
+catch {
+    $storageAccount = New-AzStorageAccount `
+        -AccountName $storageAccountName `
+        -ResourceGroupName $resourceGroupName `
+        -Location $location `
+        -SkuName Standard_LRS `
+        -Kind StorageV2 
+}
+$storageAccount
+$storageContext = $storageAccount.Context
+Start-Sleep -s 5
+
+
+# Configure Storage Account
+Enable-AzStorageStaticWebsite `
+    -Context $storageContext `
+    -IndexDocument "index.html" `
+    -ErrorDocument404Path "error.html"
+$websiteUrl = $storageAccount.PrimaryEndpoints.Web
+
+
+# Create Storage Containers
+Write-Host Creating blob containers...
+$storageContainerNames = @($storageContainerW2, $storageContainerW2Training, $storageContainerFinancial, $storageContainerFinancialTraining)
+foreach ($containerName in $storageContainerNames) {
+    try {
+        Get-AzStorageContainer `
+            -Name $containerName `
+            -Context $storageContext
+    }
+    catch {
+        new-AzStoragecontainer `
+            -Name $containerName `
+            -Context $storageContext `
+            -Permission container
+    }
+}
+Start-Sleep -s 5
+
+
+# Populate Angular Configuration File
+$cosmosAccessKey = Invoke-AzResourceAction `
+    -Action listKeys `
+    -ResourceType "Microsoft.DocumentDb/databaseAccounts" `
+    -ApiVersion "2015-04-08" `
+    -ResourceGroupName $resourceGroupName `
+    -Force `
+    -Name $cosmosAccountName | Select-Object * 
+$angularConfig = Get-Content $angularConfigFilePath | ConvertFrom-Json
+$angularConfig.cosmosAccount = $cosmosAccountName
+$angularConfig.storageAccount = $storageAccountName
+$angularConfig.cosmosAccessKey = $cosmosAccessKey.primaryMasterKey
+$angularConfig | ConvertTo-Json | Out-File $angularConfigFilePath
+
+
+# Upload Blobs And Training Data
+Write-Host Uploading blobs and training documents...`n
+$trainingInfo = @(
+    (($blobsFilePath + "w2-form/"), $storageContainerW2), `
+    (($blobsFilePath + "financial-table/"), $storageContainerFinancial), `
+    (($trainingFilePath + "w2-form/"), $storageContainerW2Training), `
+    (($trainingFilePath + "financial-table/"), $storageContainerFinancialTraining),
+    (($blobsFilePath + "angular-app/"), "`$web")
+)
+foreach ($info in $trainingInfo) {
+    $filePath = $info[0]
+    $containerName = $info[1]
+    $files = Get-ChildItem $filePath
+    foreach ($file in $files) {
+        Write-Host - Uploading $file.Name
+        if ($file.Name -eq "assets") {
+            Get-ChildItem ($filePath + $file.Name) | set-AzStorageblobcontent `
+                -Container $containerName `
+                -Blob 'config.json' `
+                -Context $storageContext `
+                -Force
+            continue
+        }
+        if (($file | Select-Object Extension).Extension -eq '.html') {
+            set-AzStorageblobcontent `
+                -File ($filePath + $file.Name) `
+                -Container $containerName `
+                -Blob $file.Name `
+                -Context $storageContext `
+                -Properties @{"ContentType" = "text/html" } `
+                -Force
+            continue
+        }
+        if (($file | Select-Object Extension).Extension -eq '.css') {
+            set-AzStorageblobcontent `
+                -File ($filePath + $file.Name) `
+                -Container $containerName `
+                -Blob $file.Name `
+                -Context $storageContext `
+                -Properties @{"ContentType" = "text/css" } `
+                -Force
+            continue
+        }
+        set-AzStorageblobcontent `
+            -File ($filePath + $file.Name) `
+            -Container $containerName `
+            -Blob $file.Name `
+            -Context $storageContext `
+            -Force
+    }
+}
+
+
+# Create Form Recognizer Account
+Write-Host Creating Form Recognizer service...
+New-AzCognitiveServicesAccount `
+    -ResourceGroupName $resourceGroupName `
+    -Name $formRecognizerName `
+    -Type FormRecognizer `
+    -SkuName F0 `
+    -Location $formRecognizerLocation
+Start-Sleep -s 10
+
+
+# Train Form Recognizer
+Write-Host Training Form Recognizer...
+$formRecognizerKey = (Get-AzCognitiveServicesAccountKey -ResourceGroupName $resourceGroupName -Name $formRecognizerName).Key1
+$formRecognizerLocation = (Get-AzCognitiveServicesAccount -ResourceGroupName $resourceGroupName -Name $formRecognizerName).Location -replace '\s', ''
+$formRecognizerTrainUrl = "https://" + $formRecognizerLocation + ".api.cognitive.microsoft.com/formrecognizer/v1.0-preview/custom/train"
+$formRecognizeHeader = @{
+    "Ocp-Apim-Subscription-Key" = $formRecognizerKey
+}
+
+$formRecognizerModels = @{ }
+$storageContainerTraining = @($storageContainerW2Training, $storageContainerFinancialTraining)
+foreach ($containerName in $storageContainerTraining) {
+    $storageContainerUrl = (Get-AzStorageContainer -Context $storageContext -Name $containerName).CloudBlobContainer.Uri.AbsoluteUri
+    $body = "{`"source`": `"$($storageContainerUrl)`"}"
+    $response = Invoke-RestMethod -Method Post -Uri $formRecognizerTrainUrl -ContentType "application/json" -Headers $formRecognizeHeader -Body $body
+    $response
+    $formRecognizerModels[$containerName] = $response.modelId
+}
+
+
 # Create App Service Plan
 Write-Host Creating app service plan...
 New-AzAppServicePlan `
@@ -325,22 +379,6 @@ New-AzAppServicePlan `
     -ResourceGroupName $resourceGroupName `
     -Tier Free
 Start-Sleep -s 5
-
-
-# Create Web App
-try {
-    Write-Host Creating web app...
-    Get-AzWebApp `
-        -ResourceGroupName $resourceGroupName `
-        -Name $webAppName
-}
-catch {
-    New-AzWebApp `
-        -ResourceGroupName $resourceGroupName `
-        -Name $webAppName `
-        -Location $location `
-        -AppServicePlan $appServicePlanName
-}
 
 
 # Azure Functions
@@ -420,13 +458,6 @@ $azureblobParameters.storage_access_key.value = $storageAccountKey
 $azureblobParameters.location.value = $location
 $azureblobParametersTemplate | ConvertTo-Json | Out-File $azureblobParametersFilePath
 
-$cosmosAccessKey = Invoke-AzResourceAction `
-    -Action listKeys `
-    -ResourceType "Microsoft.DocumentDb/databaseAccounts" `
-    -ApiVersion "2015-04-08" `
-    -ResourceGroupName $resourceGroupName `
-    -Force `
-    -Name $cosmosAccountName | Select-Object * 
 $documentdbParametersTemplate = Get-Content $documentdbParametersFilePath | ConvertFrom-Json
 $documentdbParameters = $documentdbParametersTemplate.parameters
 $documentdbParameters.subscription_id.value = $subscriptionId
@@ -576,4 +607,5 @@ foreach ($file in $container) {
 }
 
 
-Write-Host  Deployment complete.
+Write-Host Deployment complete.
+Write-Host Navigate to: $websiteUrl

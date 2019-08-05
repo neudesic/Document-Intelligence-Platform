@@ -105,19 +105,11 @@ The Document Intelligence Platform (**DIP**) is a manifestation of the solution 
 
 ## Results
 
-* The results of the script can be found in the Cosmos DB Data Explorer. To access Data Explorer, open your Azure Portal and navigate to the Cosmos DB page. Click on your Cosmos DB account and a link to Data Explorer should appear along the side menu.
+* Navigate to the link printed at the end of the script. The resulting webpage should look like this:
 
-* There will be five containers within your database:
-  * financial-table
-    * Contains relevant key-value pairs from the financial table documents.
-  * financial-table-enriched
-    * Contains financial ratings related to the percentage of monthly income spent on various expenses.
-  * processed:
-    * Contains yearly spending forecasts (percentage of yearly income spent on various expenses as well as forecasted net expenditure).
-  * w2-form:
-    * Contains relevant key-value pairs from the W2 forms.
-  * w2-form-enriched:
-    * Contains an applicant's calculated disposable income.
+![](https://i.imgur.com/OPGRWjh.png)
+
+* Click the "Load Applicants" button to begin using the web app.
 
 
 ## Cleanup
