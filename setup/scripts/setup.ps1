@@ -102,8 +102,7 @@ Connect-AzAccount
 # Set Subscription Id
 while ($TRUE) {
     try {
-        # $subscriptionId = Read-Host -Prompt "Input subscription Id"
-        $subscriptionId = "a848f8b4-b83b-4023-aba6-e71dab80977a"
+        $subscriptionId = Read-Host -Prompt "Input subscription Id"
         Set-AzContext `
             -SubscriptionId $subscriptionId
         break  
