@@ -60,7 +60,6 @@ $formRecognizerLocation = "West US 2"
 
 # app service plan
 $appServicePlanName = $prefix + "-asp"
-$webAppName = $prefix + "-wa"
 
 # function app
 $functionAppShape = "shape"
@@ -97,13 +96,14 @@ $ErrorActionPreference = "Stop"
 
 # Sign In
 Write-Host Logging in...
-Login-AzAccount 
+Connect-AzAccount
 
 
 # Set Subscription Id
 while ($TRUE) {
     try {
-        $subscriptionId = Read-Host -Prompt "Input subscription Id"
+        # $subscriptionId = Read-Host -Prompt "Input subscription Id"
+        $subscriptionId = "a848f8b4-b83b-4023-aba6-e71dab80977a"
         Set-AzContext `
             -SubscriptionId $subscriptionId
         break  
@@ -112,6 +112,7 @@ while ($TRUE) {
         Write-Host Invalid subscription Id.`n
     }
 }
+Enable-AzContextAutosave
 $index = 0
 $numbers = "123456789"
 foreach ($char in $subscriptionId.ToCharArray()) {
@@ -129,27 +130,57 @@ $functionAppEnrich = $functionAppEnrich + $id
 $functionAppProcess = $functionAppProcess + $id
 
 
+function Process_Jobs {
+    param($idArray)
+    Write-Host `nResults:
+    foreach ($id in $idArray) {
+        Wait-Job -Id $id
+        Receive-Job -Id $id
+        Remove-Job -Id $id
+    }
+}
+
+
+#----------------------------------------------------------------#
+#   Stage 1                                                      #
+#----------------------------------------------------------------#
+
+
+$stage1 = @()
+
+
 # Register Resource Providers
-Write-Host Registering resource providers:`n
+Write-Host Registering resource providers:`n 
 foreach ($resourceProvider in $resourceProviders) {
     Write-Host - Registering $resourceProvider
-    Register-AzResourceProvider `
-        -ProviderNamespace $resourceProvider;
+    $job = Start-Job -ArgumentList $resourceProvider -ScriptBlock {
+        Register-AzResourceProvider `
+            -ProviderNamespace $args[0]
+    }
+    $stage1 += $job.Id
 }
 
 
 # Create Resource Group 
-Write-Host Creating Resource Group $resourceGroupName"..."`n
-New-AzResourceGroup `
-    -Name $resourceGroupName `
-    -Location $location `
-    -Force
-Start-Sleep -s 5
+Write-Host `nCreating Resource Group $resourceGroupName"..."`n
+$job = Start-Job -ArgumentList $resourceGroupName, $location -ScriptBlock {
+    New-AzResourceGroup `
+        -Name $args[0] `
+        -Location $args[1] `
+        -Force
+}
+$stage1 += $job.Id
+
+
+Process_Jobs -idArray $stage1
 
 
 #----------------------------------------------------------------#
-#   Azure Resources                                              #
+#   Stage 2                                                      #
 #----------------------------------------------------------------#
+
+
+$stage2 = @()
 
 
 # Create Cosmos SQL API Account
@@ -157,28 +188,97 @@ Write-Host Creating CosmosDB account...
 $cosmosLocations = @(
     @{ "locationName" = "East US"; "failoverPriority" = 0 }
 )
-
 $consistencyPolicy = @{
     "defaultConsistencyLevel" = "BoundedStaleness";
     "maxIntervalInSeconds"    = 300;
     "maxStalenessPrefix"      = 100000
 }
-
 $cosmosProperties = @{
     "databaseAccountOfferType"     = "standard";
     "locations"                    = $cosmosLocations;
     "consistencyPolicy"            = $consistencyPolicy;
     "enableMultipleWriteLocations" = "true"
 }
-New-AzResource `
-    -ResourceType "Microsoft.DocumentDb/databaseAccounts" `
-    -ApiVersion "2015-04-08" `
+$job = Start-Job -ArgumentList $resourceGroupName, $location, $cosmosAccountName, ($cosmosProperties | ConvertTo-Json) -ScriptBlock {
+    New-AzResource `
+        -ResourceType "Microsoft.DocumentDb/databaseAccounts" `
+        -ApiVersion "2015-04-08" `
+        -ResourceGroupName $args[0] `
+        -Location $args[1] `
+        -Name $args[2] `
+        -PropertyObject ($args[3] | ConvertFrom-Json) `
+        -Force
+}
+$stage2 += $job.Id
+
+
+# Create Storage Account
+Write-Host Creating storage account...
+$job = Start-Job -ArgumentList $resourceGroupName, $storageAccountName, $location -ScriptBlock {
+    $ErrorActionPreference = "Stop"
+    try {
+        $storageAccount = Get-AzStorageAccount `
+            -ResourceGroupName $args[0] `
+            -AccountName $args[1]
+    }
+    catch {
+        $storageAccount = New-AzStorageAccount `
+            -AccountName $args[1] `
+            -ResourceGroupName $args[0] `
+            -Location $args[2] `
+            -SkuName Standard_LRS `
+            -Kind StorageV2 
+    }
+    $storageAccount
+    $storageContext = $storageAccount.Context
+    Start-Sleep -s 1
+
+    Enable-AzStorageStaticWebsite `
+        -Context $storageContext `
+        -IndexDocument "index.html" `
+        -ErrorDocument404Path "error.html"
+}
+$stage2 += $job.Id
+
+
+# Create Form Recognizer Account
+Write-Host Creating Form Recognizer service...
+$job = Start-Job -ArgumentList $resourceGroupName, $formRecognizerName, $formRecognizerLocation -ScriptBlock {
+    New-AzCognitiveServicesAccount `
+        -ResourceGroupName $args[0] `
+        -Name $args[1] `
+        -Type FormRecognizer `
+        -SkuName F0 `
+        -Location $args[2]
+}
+$stage2 += $job.Id
+
+
+# Create App Service Plan
+Write-Host Creating app service plan...
+$job = Start-Job -ArgumentList $appServicePlanName, $location, $resourceGroupName -ScriptBlock {
+    New-AzAppServicePlan `
+        -Name $args[0] `
+        -Location $args[1] `
+        -ResourceGroupName $args[2] `
+        -Tier Free
+}
+$stage2 += $job.Id
+
+Process_Jobs -idArray $stage2
+$storageAccount = Get-AzStorageAccount `
     -ResourceGroupName $resourceGroupName `
-    -Location $location `
-    -Name $cosmosAccountName `
-    -PropertyObject $cosmosProperties `
-    -Force
-Start-Sleep -s 5
+    -Name $storageAccountName
+$storageContext = $storageAccount.Context
+$websiteUrl = $storageAccount.PrimaryEndpoints.Web
+
+
+#----------------------------------------------------------------#
+#   Stage 3                                                      #
+#----------------------------------------------------------------#
+
+
+$stage3 = @()
 
 
 # Create Cosmos Database
@@ -188,91 +288,126 @@ $cosmosDatabaseProperties = @{
     "options"  = @{ "Throughput" = 500 }
 } 
 $cosmosResourceName = $cosmosAccountName + "/sql/" + $cosmosDatabaseName
-New-AzResource `
-    -ResourceType "Microsoft.DocumentDb/databaseAccounts/apis/databases" `
-    -ApiVersion "2015-04-08" `
-    -ResourceGroupName $resourceGroupName `
-    -Name $cosmosResourceName `
-    -PropertyObject $cosmosDatabaseProperties `
-    -Force
-Start-Sleep -s 5
-
-
-# Create Cosmos Containers
-Write-Host Creating CosmosDB Containers...
-$cosmosContainerNames = @($cosmosContainerFinancial, $cosmosContainerFinancialEnriched, 
-    $cosmosContainerW2, $cosmosContainerW2Enriched, $cosmosContainerProcessed)
-foreach ($containerName in $cosmosContainerNames) {
-    $cosmosContainerProperties = @{
-        "resource" = @{
-            "id"           = $containerName; 
-            "partitionKey" = @{
-                "paths" = @("/id"); 
-                "kind"  = "Hash"
-            }; 
-        };
-        "options"  = @{ }
-    } 
-    $containerResourceName = $cosmosAccountName + "/sql/" + $cosmosDatabaseName + "/" + $containerName
-
+$job = Start-Job -ArgumentList $resourceGroupName, $cosmosResourceName, ($cosmosDatabaseProperties | ConvertTo-Json) -ScriptBlock {
     New-AzResource `
-        -ResourceType "Microsoft.DocumentDb/databaseAccounts/apis/databases/containers" `
+        -ResourceType "Microsoft.DocumentDb/databaseAccounts/apis/databases" `
         -ApiVersion "2015-04-08" `
-        -ResourceGroupName $resourceGroupName `
-        -Name $containerResourceName `
-        -PropertyObject $cosmosContainerProperties `
-        -Force 
+        -ResourceGroupName $args[0] `
+        -Name $args[1] `
+        -PropertyObject ($args[2] | ConvertFrom-Json) `
+        -Force
 }
-
-
-# Create Storage Account
-try {
-    Write-Host Creating storage account...
-    $storageAccount = Get-AzStorageAccount `
-        -ResourceGroupName $resourceGroupName `
-        -AccountName $storageAccountName
-}
-catch {
-    $storageAccount = New-AzStorageAccount `
-        -AccountName $storageAccountName `
-        -ResourceGroupName $resourceGroupName `
-        -Location $location `
-        -SkuName Standard_LRS `
-        -Kind StorageV2 
-}
-$storageAccount
-$storageContext = $storageAccount.Context
-Start-Sleep -s 5
-
-
-# Configure Storage Account
-Enable-AzStorageStaticWebsite `
-    -Context $storageContext `
-    -IndexDocument "index.html" `
-    -ErrorDocument404Path "error.html"
-$websiteUrl = $storageAccount.PrimaryEndpoints.Web
+$stage3 += $job.Id
 
 
 # Create Storage Containers
 Write-Host Creating blob containers...
 $storageContainerNames = @($storageContainerW2, $storageContainerW2Training, $storageContainerFinancial, $storageContainerFinancialTraining)
 foreach ($containerName in $storageContainerNames) {
-    try {
-        Get-AzStorageContainer `
-            -Name $containerName `
-            -Context $storageContext
+    $job = Start-Job -ArgumentList $resourceGroupName, $storageAccountName, $containerName -ScriptBlock {
+        $ErrorActionPreference = "Stop"
+        $storageAccount = Get-AzStorageAccount `
+            -ResourceGroupName $args[0] `
+            -Name $args[1]
+        $storageContext = $storageAccount.Context
+        try {
+            Get-AzStorageContainer `
+                -Name $args[2] `
+                -Context $storageContext
+        }
+        catch {
+            new-AzStoragecontainer `
+                -Name $args[2] `
+                -Context $storageContext `
+                -Permission container
+        }
     }
-    catch {
-        new-AzStoragecontainer `
-            -Name $containerName `
-            -Context $storageContext `
-            -Permission container
-    }
+    $stage3 += $job.Id
 }
-Start-Sleep -s 5
 
 
-# Populate Angular Configuration File
+# Azure Functions
+$functionAppInformation = @(
+    ($functionAppShape, $filePathShape), `
+    ($functionAppEnrich, $filePathEnrich), `
+    ($functionAppProcess, $filePathProcess))
+foreach ($info in $functionAppInformation) {
+    $name = $info[0]
+    $filepath = $info[1]
+    $functionAppSettings = @{
+        serverFarmId = "/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName/providers/Microsoft.Web/serverFarms/$AppServicePlanName";
+        alwaysOn     = $True;
+    }
+
+    # Create Function App
+    Write-Host Creating Function App $name"..."
+    $job = Start-Job -ArgumentList $resourceGroupName, $location, $name, ($functionAppSettings | ConvertTo-Json), $storageAccountName, $filepath -ScriptBlock {
+        New-AzResource `
+            -ResourceGroupName $args[0] `
+            -Location $args[1] `
+            -ResourceName $args[2] `
+            -ResourceType "microsoft.web/sites" `
+            -Kind "functionapp" `
+            -Properties ($args[3] | ConvertFrom-Json) `
+            -Force
+
+        $storageAccountKey = (Get-AzStorageAccountKey -ResourceGroupName $args[0] -AccountName $args[4]).Value[0]
+        $storageAccountName = $args[4]
+        $storageAccountConnectionString = "DefaultEndpointsProtocol=https;AccountName=$storageAccountName;AccountKey=$($storageAccountKey)"
+        $functionAppSettings = @{
+            AzureWebJobsDashboard       = $storageAccountConnectionString;
+            AzureWebJobsStorage         = $storageAccountConnectionString;
+            FUNCTION_APP_EDIT_MODE      = "readwrite";
+            FUNCTIONS_EXTENSION_VERSION = "~2";
+            FUNCTIONS_WORKER_RUNTIME    = "dotnet";
+        }
+
+        # Configure Function App
+        Write-Host Configuring $args[2]"..."
+        Set-AzWebApp `
+            -Name $args[2] `
+            -ResourceGroupName $args[0] `
+            -AppSettings $functionAppSettings 
+
+        # Deploy Function To Function App
+        Write-Host Deploying $args[2]"..."
+        $deploymentCredentials = Invoke-AzResourceAction `
+            -ResourceGroupName $args[0] `
+            -ResourceType Microsoft.Web/sites/config `
+            -ResourceName ($args[2] + "/publishingcredentials") `
+            -Action list `
+            -ApiVersion 2015-08-01 `
+            -Force
+        $username = $deploymentCredentials.Properties.PublishingUserName
+        $password = $deploymentCredentials.Properties.PublishingPassword 
+        $name = $args[2]
+        $apiUrl = "https://$($name).scm.azurewebsites.net/api/zipdeploy"
+        $base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $username, $password)))
+        $userAgent = "powershell/1.0"
+        Invoke-RestMethod `
+            -Uri $apiUrl `
+            -Headers @{Authorization = ("Basic {0}" -f $base64AuthInfo) } `
+            -UserAgent $userAgent `
+            -Method POST `
+            -InFile $args[5] `
+            -ContentType "multipart/form-data"
+    }
+    $stage3 += $job.Id
+}
+
+ 
+# Deploy API Connections
+$storageAccountKey = (Get-AzStorageAccountKey `
+        -ResourceGroupName $resourceGroupName `
+        -AccountName $storageAccountName).Value[0]
+$azureblobParametersTemplate = Get-Content $azureblobParametersFilePath | ConvertFrom-Json
+$azureblobParameters = $azureblobParametersTemplate.parameters
+$azureblobParameters.subscription_id.value = $subscriptionId
+$azureblobParameters.storage_account_name.value = $storageAccountName
+$azureblobParameters.storage_access_key.value = $storageAccountKey
+$azureblobParameters.location.value = $location
+$azureblobParametersTemplate | ConvertTo-Json | Out-File $azureblobParametersFilePath
+
 $cosmosAccessKey = Invoke-AzResourceAction `
     -Action listKeys `
     -ResourceType "Microsoft.DocumentDb/databaseAccounts" `
@@ -280,6 +415,76 @@ $cosmosAccessKey = Invoke-AzResourceAction `
     -ResourceGroupName $resourceGroupName `
     -Force `
     -Name $cosmosAccountName | Select-Object * 
+$documentdbParametersTemplate = Get-Content $documentdbParametersFilePath | ConvertFrom-Json
+$documentdbParameters = $documentdbParametersTemplate.parameters
+$documentdbParameters.subscription_id.value = $subscriptionId
+$documentdbParameters.location.value = $location
+$documentdbParameters.cosmos_account_name.value = $cosmosAccountName
+$documentdbParameters.cosmos_access_key.value = $cosmosAccessKey.primaryMasterKey
+$documentdbParametersTemplate | ConvertTo-Json | Out-File $documentdbParametersFilePath
+
+$apiConnectionInformation = @(
+    ($azureblobName, $azureblobTemplateFilePath, $azureblobParametersFilePath), 
+    ($documentdbName, $documentdbTemplateFilePath, $documentdbParametersFilePath)
+)
+foreach ($info in $apiConnectionInformation) {
+    $connectionName = $info[0]
+    $templateFilePath = $info[1]
+    $parametersFilePath = $info[2]
+    Write-Host Deploying $connectionName"..."
+    $job = Start-Job -ArgumentList $resourceGroupName, $connectionName, $templateFilePath, $parametersFilePath -ScriptBlock {
+        New-AzResourceGroupDeployment `
+            -ResourceGroupName $args[0] `
+            -Name $args[1] `
+            -TemplateFile $args[2] `
+            -TemplateParameterFile $args[3]
+    }
+    $stage3 += $job.Id
+}
+
+
+Process_Jobs -idArray $stage3
+
+
+#----------------------------------------------------------------#
+#   Stage 4                                                      #
+#----------------------------------------------------------------#
+
+
+$stage4 = @()
+
+
+# Create Cosmos Containers
+Write-Host Creating CosmosDB Containers...
+$cosmosContainerNames = @($cosmosContainerFinancial, $cosmosContainerFinancialEnriched, 
+    $cosmosContainerW2, $cosmosContainerW2Enriched, $cosmosContainerProcessed)
+foreach ($containerName in $cosmosContainerNames) {
+    $containerResourceName = $cosmosAccountName + "/sql/" + $cosmosDatabaseName + "/" + $containerName
+    $job = Start-Job -ArgumentList $resourceGroupName, $containerResourceName, $containerName `
+        -ScriptBlock {
+        $cosmosContainerProperties = @{
+            "resource" = @{
+                "id"           = $args[2]; 
+                "partitionKey" = @{
+                    "paths" = @("/id"); 
+                    "kind"  = "Hash"
+                }; 
+            };
+            "options"  = @{ }
+        }
+        New-AzResource `
+            -ResourceType "Microsoft.DocumentDb/databaseAccounts/apis/databases/containers" `
+            -ApiVersion "2015-04-08" `
+            -ResourceGroupName $args[0] `
+            -Name $args[1] `
+            -PropertyObject $cosmosContainerProperties `
+            -Force 
+    }
+    $stage4 += $job.Id
+}
+
+
+# Populate Angular Configuration File
 $angularConfig = Get-Content $angularConfigFilePath | ConvertFrom-Json
 $angularConfig.cosmosAccount = $cosmosAccountName
 $angularConfig.storageAccount = $storageAccountName
@@ -300,55 +505,62 @@ foreach ($info in $trainingInfo) {
     $filePath = $info[0]
     $containerName = $info[1]
     $files = Get-ChildItem $filePath
-    foreach ($file in $files) {
-        Write-Host - Uploading $file.Name
-        if ($file.Name -eq "assets") {
-            Get-ChildItem ($filePath + $file.Name) | set-AzStorageblobcontent `
-                -Container $containerName `
-                -Blob 'config.json' `
-                -Context $storageContext `
-                -Force
-            continue
-        }
-        if (($file | Select-Object Extension).Extension -eq '.html') {
+    $job = Start-Job -ArgumentList $filepath, $files, $containerName, $resourceGroupName, $storageAccountName -ScriptBlock {
+        foreach ($file in $args[1]) {
+            Write-Host - Uploading $file.Name
+            $storageAccount = Get-AzStorageAccount `
+                -ResourceGroupName $args[3] `
+                -Name $args[4]
+            $storageContext = $storageAccount.Context
+            if ($file.Name -eq "assets") {
+                Get-ChildItem ($args[0] + $file.Name) | set-AzStorageblobcontent `
+                    -Container $args[2] `
+                    -Blob 'config.json' `
+                    -Context $storageContext `
+                    -Force
+                continue
+            }
+            if (($file | Select-Object Extension).Extension -eq '.html') {
+                set-AzStorageblobcontent `
+                    -File ($args[0] + $file.Name) `
+                    -Container $args[2] `
+                    -Blob $file.Name `
+                    -Context $storageContext `
+                    -Properties @{"ContentType" = "text/html" } `
+                    -Force
+                continue
+            }
+            if (($file | Select-Object Extension).Extension -eq '.css') {
+                set-AzStorageblobcontent `
+                    -File ($args[0] + $file.Name) `
+                    -Container $args[2] `
+                    -Blob $file.Name `
+                    -Context $storageContext `
+                    -Properties @{"ContentType" = "text/css" } `
+                    -Force
+                continue
+            }
             set-AzStorageblobcontent `
-                -File ($filePath + $file.Name) `
-                -Container $containerName `
+                -File ($args[0] + $file.Name) `
+                -Container $args[2] `
                 -Blob $file.Name `
                 -Context $storageContext `
-                -Properties @{"ContentType" = "text/html" } `
                 -Force
-            continue
         }
-        if (($file | Select-Object Extension).Extension -eq '.css') {
-            set-AzStorageblobcontent `
-                -File ($filePath + $file.Name) `
-                -Container $containerName `
-                -Blob $file.Name `
-                -Context $storageContext `
-                -Properties @{"ContentType" = "text/css" } `
-                -Force
-            continue
-        }
-        set-AzStorageblobcontent `
-            -File ($filePath + $file.Name) `
-            -Container $containerName `
-            -Blob $file.Name `
-            -Context $storageContext `
-            -Force
     }
+    $stage4 += $job.Id
 }
 
 
-# Create Form Recognizer Account
-Write-Host Creating Form Recognizer service...
-New-AzCognitiveServicesAccount `
-    -ResourceGroupName $resourceGroupName `
-    -Name $formRecognizerName `
-    -Type FormRecognizer `
-    -SkuName F0 `
-    -Location $formRecognizerLocation
-Start-Sleep -s 10
+Process_Jobs -idArray $stage4
+
+
+#----------------------------------------------------------------#
+#   Stage 5                                                      #
+#----------------------------------------------------------------#
+
+
+$stage5 = @()
 
 
 # Train Form Recognizer
@@ -359,129 +571,44 @@ $formRecognizerTrainUrl = "https://" + $formRecognizerLocation + ".api.cognitive
 $formRecognizeHeader = @{
     "Ocp-Apim-Subscription-Key" = $formRecognizerKey
 }
-
 $formRecognizerModels = @{ }
 $storageContainerTraining = @($storageContainerW2Training, $storageContainerFinancialTraining)
 foreach ($containerName in $storageContainerTraining) {
-    $storageContainerUrl = (Get-AzStorageContainer -Context $storageContext -Name $containerName).CloudBlobContainer.Uri.AbsoluteUri
-    $body = "{`"source`": `"$($storageContainerUrl)`"}"
-    $response = Invoke-RestMethod -Method Post -Uri $formRecognizerTrainUrl -ContentType "application/json" -Headers $formRecognizeHeader -Body $body
-    $response
-    $formRecognizerModels[$containerName] = $response.modelId
-}
-
-
-# Create App Service Plan
-Write-Host Creating app service plan...
-New-AzAppServicePlan `
-    -Name $appServicePlanName `
-    -Location $location `
-    -ResourceGroupName $resourceGroupName `
-    -Tier Free
-Start-Sleep -s 5
-
-
-# Azure Functions
-$functionAppInformation = @(
-    ($functionAppShape, $filePathShape), `
-    ($functionAppEnrich, $filePathEnrich), `
-    ($functionAppProcess, $filePathProcess))
-foreach ($info in $functionAppInformation) {
-    $name = $info[0]
-    $filepath = $info[1]
-    $functionAppSettings = @{
-        serverFarmId = "/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName/providers/Microsoft.Web/serverFarms/$AppServicePlanName";
-        alwaysOn     = $True;
+    $job = Start-Job -ArgumentList $containerName, $formRecognizeHeader, $formRecognizerTrainUrl, $resourceGroupName, $storageAccountName -ScriptBlock {
+        $storageAccount = Get-AzStorageAccount `
+            -ResourceGroupName $args[3] `
+            -Name $args[4]
+        $storageContext = $storageAccount.Context
+        $formRecognizerModels = @{ }
+        $storageContainerUrl = (Get-AzStorageContainer -Context $storageContext -Name $args[0]).CloudBlobContainer.Uri.AbsoluteUri
+        $body = "{`"source`": `"$($storageContainerUrl)`"}"
+        $response = Invoke-RestMethod -Method Post -Uri $args[2] -ContentType "application/json" -Headers $args[1] -Body $body
+        $response
+        $formRecognizerModels[$args[0]] = $response.modelId
+        return $formRecognizerModels
     }
+    $stage5 += $job.Id
+}
 
-    # Create Function App
-    Write-Host Creating Function App $name"..."
-    New-AzResource `
-        -ResourceGroupName $resourceGroupName `
-        -Location $location `
-        -ResourceName $name `
-        -ResourceType "microsoft.web/sites" `
-        -Kind "functionapp" `
-        -Properties $functionAppSettings `
-        -Force
-
-    $storageAccountKey = (Get-AzStorageAccountKey -ResourceGroupName $resourceGroupName -AccountName $storageAccountName).Value[0]
-    $storageAccountConnectionString = "DefaultEndpointsProtocol=https;AccountName=$storageAccountName;AccountKey=$($storageAccountKey)"
-    $functionAppSettings = @{
-        AzureWebJobsDashboard       = $storageAccountConnectionString;
-        AzureWebJobsStorage         = $storageAccountConnectionString;
-        FUNCTION_APP_EDIT_MODE      = "readwrite";
-        FUNCTIONS_EXTENSION_VERSION = "~2";
-        FUNCTIONS_WORKER_RUNTIME    = "dotnet";
+Write-Host `nResults:
+foreach ($id in $stage5) {
+    Wait-Job -Id $id
+    $modelMap = (Receive-Job -Id $id -Keep)[-1]
+    foreach ($key in $modelMap.Keys) {
+        $formRecognizerModels[$key] = $modelMap[$key]
+        break
     }
-
-    # Configure Function App
-    Write-Host Configuring $name"..."
-    Set-AzWebApp `
-        -Name $name `
-        -ResourceGroupName $resourceGroupName `
-        -AppSettings $functionAppSettings 
-
-    # Deploy Function To Function App
-    Write-Host Deploying $name"..."
-    $deploymentCredentials = Invoke-AzResourceAction `
-        -ResourceGroupName $resourceGroupName `
-        -ResourceType Microsoft.Web/sites/config `
-        -ResourceName ($name + "/publishingcredentials") `
-        -Action list `
-        -ApiVersion 2015-08-01 `
-        -Force
-    $username = $deploymentCredentials.Properties.PublishingUserName
-    $password = $deploymentCredentials.Properties.PublishingPassword 
-    $apiUrl = "https://$($info[0]).scm.azurewebsites.net/api/zipdeploy"
-    $base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $username, $password)))
-    $userAgent = "powershell/1.0"
-    Invoke-RestMethod `
-        -Uri $apiUrl `
-        -Headers @{Authorization = ("Basic {0}" -f $base64AuthInfo) } `
-        -UserAgent $userAgent `
-        -Method POST `
-        -InFile $filePath `
-        -ContentType "multipart/form-data"
+    Receive-Job -Id $id
+    Remove-Job -Id $id
 }
 
-    
-# Deploy API Connections
-$storageAccountKey = (Get-AzStorageAccountKey `
-        -ResourceGroupName $resourceGroupName `
-        -AccountName $storageAccountName).Value[0]
-$azureblobParametersTemplate = Get-Content $azureblobParametersFilePath | ConvertFrom-Json
-$azureblobParameters = $azureblobParametersTemplate.parameters
-$azureblobParameters.subscription_id.value = $subscriptionId
-$azureblobParameters.storage_account_name.value = $storageAccountName
-$azureblobParameters.storage_access_key.value = $storageAccountKey
-$azureblobParameters.location.value = $location
-$azureblobParametersTemplate | ConvertTo-Json | Out-File $azureblobParametersFilePath
 
-$documentdbParametersTemplate = Get-Content $documentdbParametersFilePath | ConvertFrom-Json
-$documentdbParameters = $documentdbParametersTemplate.parameters
-$documentdbParameters.subscription_id.value = $subscriptionId
-$documentdbParameters.location.value = $location
-$documentdbParameters.cosmos_account_name.value = $cosmosAccountName
-$documentdbParameters.cosmos_access_key.value = $cosmosAccessKey.primaryMasterKey
-$documentdbParametersTemplate | ConvertTo-Json | Out-File $documentdbParametersFilePath
+#----------------------------------------------------------------#
+#   Stage 6                                                      #
+#----------------------------------------------------------------#
 
-$apiConnectionInformation = @(
-    ($azureblobName, $azureblobTemplateFilePath, $azureblobParametersFilePath), 
-    ($documentdbName, $documentdbTemplateFilePath, $documentdbParametersFilePath)
-)
-foreach ($info in $apiConnectionInformation) {
-    $connectionName = $info[0]
-    $templateFilePath = $info[1]
-    $parametersFilePath = $info[2]
-    Write-Host Deploying $connectionName"..."
-    New-AzResourceGroupDeployment `
-        -ResourceGroupName $resourceGroupName `
-        -Name $connectionName `
-        -TemplateFile $templateFilePath `
-        -TemplateParameterFile $parametersFilePath
-}
-Start-Sleep -s 5
+
+$stage6 = @()
 
 
 # Deploy Logic Apps
@@ -518,11 +645,15 @@ $logicApp1Parameters.cosmos_container_w2.value = $cosmosContainerW2
 $logicApp1Parameters.cosmos_container_w2_enriched.value = $cosmosContainerW2Enriched
 $logicApp1ParametersTemplate | ConvertTo-Json | Out-File $logicApp1ParametersFilePath
 Write-Host Deploying Logic App 1...
-New-AzResourceGroupDeployment `
-    -ResourceGroupName $resourceGroupName `
-    -Name $logicApp1Name `
-    -TemplateFile $logicApp1TemplateFilePath `
-    -TemplateParameterFile $logicApp1ParametersFilePath
+$job = Start-Job -ArgumentList $resourceGroupName, $logicApp1Name, $logicApp1TemplateFilePath, $logicApp1ParametersFilePath -ScriptBlock {
+    New-AzResourceGroupDeployment `
+        -ResourceGroupName $args[0] `
+        -Name $args[1] `
+        -TemplateFile $args[2] `
+        -TemplateParameterFile $args[3]
+}
+$stage6 += $job.Id
+
 
 $logicApp2ParametersTemplate = Get-Content $logicApp2ParametersFilePath | ConvertFrom-Json
 $logicApp2Parameters = $logicApp2ParametersTemplate.parameters
@@ -539,15 +670,29 @@ $logicApp2Parameters.cosmos_container_w2_enriched.value = $cosmosContainerW2Enri
 $logicApp2Parameters.cosmos_container_processed.value = $cosmosContainerProcessed
 $logicApp2ParametersTemplate | ConvertTo-Json | Out-File $logicApp2ParametersFilePath
 Write-Host Deploying Logic App 2...
-New-AzResourceGroupDeployment `
-    -ResourceGroupName $resourceGroupName `
-    -Name $logicApp2Name `
-    -TemplateFile $logicApp2TemplateFilePath `
-    -TemplateParameterFile $logicApp2ParametersFilePath
+$job = Start-Job -ArgumentList $resourceGroupName, $logicApp2Name, $logicApp2TemplateFilePath, $logicApp2ParametersFilePath -ScriptBlock {
+    New-AzResourceGroupDeployment `
+        -ResourceGroupName $args[0] `
+        -Name $args[1] `
+        -TemplateFile $args[2] `
+        -TemplateParameterFile $args[3]
+}
+$stage6 += $job.Id
+
+
+Process_Jobs -idArray $stage6
+
+
+#----------------------------------------------------------------#
+#   Stage 7                                                      #
+#----------------------------------------------------------------#
+
+
+$stage7 = @()
 
 
 # Process Documents
-Write-Host  Deploying documents...`n
+Write-Host  Processing documents...`n
 $runInformation = @(
     ($storageContainerFinancial, $formRecognizerModels[$storageContainerFinancialTraining], "Financial Table"),
     ($storageContainerW2, $formRecognizerModels[$storageContainerW2Training], "W2")
@@ -563,8 +708,7 @@ foreach ($info in $runInformation) {
     $containerName = $info[0]
     $model = $info[1]
     $formType = $info[2] 
-
-    Write-Host `n$containerName`n`n  
+    Write-Host `n$containerName`n  
     $container = Get-AzStorageContainer -Name $containerName -Context $storageContext | Get-AzStorageBlob
     foreach ($file in $container) { 
         $fileName = $file.Name
@@ -574,16 +718,30 @@ foreach ($info in $runInformation) {
             "modelId"  = $model;
             "formType" = $formType
         } | ConvertTo-Json
-
-        Invoke-RestMethod `
-            -Uri $logicAppTriggerUri `
-            -Method Post `
-            -ContentType "application/json" `
-            -Body $body 
+        $job = Start-Job -ArgumentList $logicAppTriggerUri, ($body | ConvertTo-Json) -ScriptBlock {
+            Invoke-RestMethod `
+                -Uri $args[0] `
+                -Method Post `
+                -ContentType "application/json" `
+                -Body ($args[1] | ConvertFrom-Json) 
+        }
+        $stage7 += $job.Id
     }
 }
 
-Write-Host `nProcessing documents:`n`n  
+
+Process_Jobs -idArray $stage7
+
+
+#----------------------------------------------------------------#
+#   Stage 8                                                      #
+#----------------------------------------------------------------#
+
+
+$stage8 = @()
+
+
+Write-Host `nAnalyzing documents:`n  
 $logicAppTriggerName = (Get-AzLogicAppTrigger `
         -ResourceGroupName $resourceGroupName `
         -Name $logicApp2Name).Name 
@@ -598,14 +756,19 @@ foreach ($file in $container) {
     $body = @{
         "recordId" = $file.Name
     } | ConvertTo-Json
-
-    Invoke-RestMethod `
-        -Uri $logicAppTriggerUri `
-        -Method Post `
-        -ContentType "application/json" `
-        -Body $body 
+    $job = Start-Job -ArgumentList $logicAppTriggerUri, ($body | ConvertTo-Json) -ScriptBlock {
+        Invoke-RestMethod `
+            -Uri $args[0] `
+            -Method Post `
+            -ContentType "application/json" `
+            -Body ($args[1] | ConvertFrom-Json) 
+    }
+    $stage8 += $job.Id
 }
 
 
-Write-Host Deployment complete.
+Process_Jobs -idArray $stage8
+
+
+Write-Host Deployment complete.`n
 Write-Host Navigate to: $websiteUrl
