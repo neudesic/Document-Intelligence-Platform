@@ -158,6 +158,25 @@ function Process_Jobs {
 $stage1 = @()
 
 
+function Process_Jobs {
+    param($idArray)
+    Write-Host `nResults:
+    foreach ($id in $idArray) {
+        Wait-Job -Id $id
+        Receive-Job -Id $id
+        Remove-Job -Id $id
+    }
+}
+
+
+#----------------------------------------------------------------#
+#   Stage 1                                                      #
+#----------------------------------------------------------------#
+
+
+$stage1 = @()
+
+
 # Register Resource Providers
 Write-Host Registering resource providers:`n 
 foreach ($resourceProvider in $resourceProviders) {
@@ -505,7 +524,6 @@ foreach ($containerName in $cosmosContainerNames) {
     $stage4 += $job.Id
 }
 
-## get searchkey
 
 # Populate Angular Configuration File
 $angularConfig = Get-Content $angularConfigFilePath | ConvertFrom-Json
