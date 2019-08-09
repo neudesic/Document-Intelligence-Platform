@@ -87,7 +87,13 @@ The Document Intelligence Platform (**DIP**) is a manifestation of the solution 
 * [PowerShell](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell?view=powershell-6) 5.1 or higher on Windows, or PowerShell Core 6.x and later on all platforms.
 
 * [Az Powershell Module](https://docs.microsoft.com/en-us/powershell/azure/install-az-ps?view=azps-2.4.0)
+
+      Install-Module -Name Az -AllowClobber -Scope CurrentUser
   * You can't have both the AzureRM and Az modules installed for PowerShell 5.1 for Windows at the same time. If you need to keep AzureRM available on your system, install the Az module for [PowerShell Core 6.x](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-core-on-windows?view=powershell-6) or later.
+
+* [Az Search](https://docs.microsoft.com/en-us/azure/search/search-manage-powershell#import-azsearch) (Azure Search module for powershell)
+
+      Install-Module -Name Az.Search
 
 * A subscription to [Form Recognizer](https://azure.microsoft.com/en-us/services/cognitive-services/form-recognizer/). Since Form Recognizer is still in Preview, access must be [requested](https://forms.office.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbRyj5DlT4gqZKgEsfbkRQK5xUMjZVRU02S1k4RUdLWjdKUkNRQVRRTDg1NC4u). Once access has been granted, continue to the [Run](#run) section.
 
@@ -105,7 +111,7 @@ The Document Intelligence Platform (**DIP**) is a manifestation of the solution 
 
 ## Results
 
-* Navigate to the link printed at the end of the script. The resulting webpage should look like this:
+* Upon completion, the script will automatically navigate to the following website:
 
 ![](https://i.imgur.com/OPGRWjh.png)
 

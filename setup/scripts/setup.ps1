@@ -85,6 +85,15 @@ $logicApp2TemplateFilePath = "$PSScriptRoot\..\templates\logic-app-2-template.js
 $logicApp1ParametersFilePath = "$PSScriptRoot\..\templates\logic-app-1-parameters.json"
 $logicApp2ParametersFilePath = "$PSScriptRoot\..\templates\logic-app-2-parameters.json"
 
+# cognitive search
+$cognitiveSearchName = $prefixLowCaseNoDashes + "search"
+$dataSourceNameW2 = "datasource-w2"
+$dataSourceNameFinancial = "datasource-financial"
+$indexName = $prefixLowCaseNoDashes + "-index"
+$skillsetName = $prefixLowCaseNoDashes + "-skillset"
+$indexerNameW2 = $prefixLowCaseNoDashes + "-indexer-w2"
+$indexerNameFinancial = $prefixLowCaseNoDashes + "-indexer-financial"
+
 
 #----------------------------------------------------------------#
 #   Setup                                                        #
@@ -127,6 +136,26 @@ $webAppName = $webAppName + $id
 $functionAppShape = $functionAppShape + $id
 $functionAppEnrich = $functionAppEnrich + $id
 $functionAppProcess = $functionAppProcess + $id
+$cognitiveSearchName = $cognitiveSearchName + $id
+
+
+function Process_Jobs {
+    param($idArray)
+    Write-Host `nResults:
+    foreach ($id in $idArray) {
+        Wait-Job -Id $id
+        Receive-Job -Id $id
+        Remove-Job -Id $id
+    }
+}
+
+
+#----------------------------------------------------------------#
+#   Stage 1                                                      #
+#----------------------------------------------------------------#
+
+
+$stage1 = @()
 
 
 function Process_Jobs {
@@ -263,6 +292,19 @@ $job = Start-Job -ArgumentList $appServicePlanName, $location, $resourceGroupNam
         -Tier Free
 }
 $stage2 += $job.Id
+
+
+# Create Cognitive Search Service
+Write-Host Creating Cognitive Search Service...
+$job = Start-Job -ArgumentList $resourceGroupName, $cognitiveSearchName, $location -ScriptBlock {
+    New-AzSearchService `
+        -ResourceGroupName $args[0] `
+        -Name $args[1] `
+        -Sku "Free" `
+        -Location $args[2]
+}
+$stage2 += $job.Id
+
 
 Process_Jobs -idArray $stage2
 $storageAccount = Get-AzStorageAccount `
@@ -488,6 +530,8 @@ $angularConfig = Get-Content $angularConfigFilePath | ConvertFrom-Json
 $angularConfig.cosmosAccount = $cosmosAccountName
 $angularConfig.storageAccount = $storageAccountName
 $angularConfig.cosmosAccessKey = $cosmosAccessKey.primaryMasterKey
+$angularConfig.searchAccount = $cognitiveSearchName
+$angularConfig.searchKey = (Get-AzSearchQueryKey -ResourceGroupName $resourceGroupName -ServiceName $cognitiveSearchName).Key
 $angularConfig | ConvertTo-Json | Out-File $angularConfigFilePath
 
 
@@ -679,6 +723,355 @@ $job = Start-Job -ArgumentList $resourceGroupName, $logicApp2Name, $logicApp2Tem
 $stage6 += $job.Id
 
 
+# Configure Cognitive Search Service
+Write-Host Configuring Cognitive Search Service...
+$job = Start-Job -ArgumentList $resourceGroupName, $cognitiveSearchName, $location, $storageAccountName, $storageContainerW2, `
+    $storageContainerFinancial, $dataSourceNameW2, $dataSourceNameFinancial, $indexName, $skillsetName, $indexerNameW2, $indexerNameFinancial `
+    -ScriptBlock {
+    $resourceGroupName = $args[0]
+    $cognitiveSearchName = $args[1]
+    $storageAccountName = $args[3]
+    $storageContainerW2 = $args[4]
+    $storageContainerFinancial = $args[5]
+    $dataSourceNameW2 = $args[6]
+    $dataSourceNameFinancial = $args[7]
+    $indexName = $args[8]
+    $skillsetName = $args[9]
+    $indexerNameW2 = $args[10]
+    $indexerNameFinancial = $args[11]
+
+    # Create Cognitive Search Data Source
+    Write-Host Creating cognitive search data sources...
+    $cognitiveSearchKey = (Get-AzSearchAdminKeyPair -ResourceGroupName $resourceGroupName -ServiceName $cognitiveSearchName).Primary
+    $dataSourceHeader = @{
+        "api-key" = $cognitiveSearchKey
+    }
+    $storageAccountKey = (Get-AzStorageAccountKey -ResourceGroupName $resourceGroupName -AccountName $storageAccountName).Value[0]
+    $storageAccountConnectionString = "DefaultEndpointsProtocol=https;AccountName=$storageAccountName;AccountKey=$($storageAccountKey)"
+    $dataSourceUrl = "https://" + $cognitiveSearchName + ".search.windows.net/datasources?api-version=2019-05-06"
+    $dataSourceInfo = @(
+        ($dataSourceNameW2, $storageContainerW2), 
+        ($dataSourceNameFinancial, $storageContainerFinancial));
+    foreach ($info in $dataSourceInfo) {
+        $dataSourceName = $info[0]
+        $container = $info[1]
+        $dataSourceBody = @{
+            "name"        = $dataSourceName
+            "type"        = "azureblob"
+            "credentials" = @{"connectionString" = $storageAccountConnectionString }
+            "container"   = @{ "name" = $container }
+        } | ConvertTo-Json
+        try {
+            Invoke-RestMethod `
+                -Method Post `
+                -Uri $dataSourceUrl `
+                -Headers $dataSourceHeader `
+                -Body $dataSourceBody `
+                -ContentType "application/json"
+        }
+        catch { }
+    }
+
+
+    # Create Cognitive Search Index
+    Write-Host Creating cognitive search index...
+    $indexHeader = @{
+        'api-key'      = $cognitiveSearchKey
+        'Content-Type' = 'application/json' 
+    }
+    $indexBody = @{
+        "name"   = $indexName
+        "fields" = @(
+            @{
+                "name"       = "id";
+                "type"       = "Edm.String";
+                "key"        = $true;
+                "searchable" = $true;
+                "filterable" = $true;
+                "facetable"  = $false;
+                "sortable"   = $true
+            },
+            @{
+                "name"       = "content";
+                "type"       = "Edm.String";
+                "sortable"   = $false;
+                "searchable" = $true;
+                "filterable" = $false;
+                "facetable"  = $false
+            },
+            @{
+                "name"       = "keyPhrases";
+                "type"       = "Collection(Edm.String)";
+                "searchable" = $true;
+                "sortable"   = $false;
+                "filterable" = $true;
+                "facetable"  = $true
+            },
+            @{
+                "name"       = "organizations";
+                "type"       = "Collection(Edm.String)";
+                "searchable" = $true;
+                "sortable"   = $false;
+                "filterable" = $true;
+                "facetable"  = $true
+            },
+            @{
+                "name"       = "persons";
+                "type"       = "Collection(Edm.String)";
+                "searchable" = $true;
+                "sortable"   = $false;
+                "filterable" = $true;
+                "facetable"  = $true
+            },
+            @{
+                "name"       = "locations";
+                "type"       = "Collection(Edm.String)";
+                "searchable" = $true;
+                "sortable"   = $false;
+                "filterable" = $true;
+                "facetable"  = $true
+            },
+            @{
+                "name"       = "metadata_storage_path";
+                "type"       = "Edm.String";
+                "searchable" = $true;
+                "sortable"   = $false;
+                "filterable" = $false;
+                "facetable"  = $false
+            },
+            @{
+                "name"       = "metadata_storage_name";
+                "type"       = "Edm.String";
+                "searchable" = $true;
+                "sortable"   = $false;
+                "filterable" = $false;
+                "facetable"  = $false
+            }
+        )
+    } | ConvertTo-Json
+    $indexUrl = "https://" + $cognitiveSearchName + ".search.windows.net/indexes?api-version=2019-05-06"
+    try {
+        Invoke-RestMethod `
+            -Method Post `
+            -Uri $indexUrl `
+            -Headers $indexHeader `
+            -Body $indexBody `
+            -ContentType "application/json"
+    }
+    catch { }
+
+
+    # Create Cognitive Search Skillset
+    Write-Host Creating cognitive search skillset...
+    $skillsetHeader = @{
+        'api-key'      = $cognitiveSearchKey
+        'Content-Type' = 'application/json' 
+    }
+    $skillsetBody = '
+{
+    "name": "' + $skillsetName + '",
+    "skills": [
+        {
+            "@odata.type": "#Microsoft.Skills.Vision.OcrSkill",
+            "name": "#8",
+            "description": null,
+            "context": "/document/normalized_images/*",
+            "textExtractionAlgorithm": "printed",
+            "lineEnding": "Space",
+            "defaultLanguageCode": "en",
+            "detectOrientation": true,
+            "inputs": [
+                {
+                    "name": "image",
+                    "source": "/document/normalized_images/*",
+                    "sourceContext": null,
+                    "inputs": []
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "text",
+                    "targetName": "text"
+                }
+            ]
+        },
+        {
+            "@odata.type": "#Microsoft.Skills.Text.EntityRecognitionSkill",
+            "name": "#1",
+            "description": null,
+            "context": "/document",
+            "categories": [
+                "Person",
+                "Organization",
+                "Location"
+            ],
+            "defaultLanguageCode": "en",
+            "minimumPrecision": null,
+            "includeTypelessEntities": null,
+            "inputs": [
+                {
+                    "name": "text",
+                    "source": "/document/mergedText",
+                    "sourceContext": null,
+                    "inputs": []
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "persons",
+                    "targetName": "persons"
+                },
+                {
+                    "name": "organizations",
+                    "targetName": "organizations"
+                },
+                {
+                    "name": "locations",
+                    "targetName": "locations"
+                }
+            ]
+        },
+        {
+            "@odata.type": "#Microsoft.Skills.Text.KeyPhraseExtractionSkill",
+            "name": "#2",
+            "description": null,
+            "context": "/document",
+            "defaultLanguageCode": "en",
+            "maxKeyPhraseCount": null,
+            "inputs": [
+                {
+                    "name": "text",
+                    "source": "/document/mergedText",
+                    "sourceContext": null,
+                    "inputs": []
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "keyPhrases",
+                    "targetName": "keyPhrases"
+                }
+            ]
+        },
+        {
+            "@odata.type": "#Microsoft.Skills.Text.MergeSkill",
+            "name": "#4",
+            "description": null,
+            "context": "/document",
+            "insertPreTag": " ",
+            "insertPostTag": " ",
+            "inputs": [
+                {
+                    "name": "text",
+                    "source": "/document/content",
+                    "sourceContext": null,
+                    "inputs": []
+                },
+                {
+                    "name": "itemsToInsert",
+                    "source": "/document/normalized_images/*/text",
+                    "sourceContext": null,
+                    "inputs": []
+                },
+                {
+                    "name": "offsets",
+                    "source": "/document/normalized_images/*/contentOffset",
+                    "sourceContext": null,
+                    "inputs": []
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "mergedText",
+                    "targetName": "mergedText"
+                }
+            ]
+        }
+    ]
+}'
+    $skillsetUrl = "https://" + $cognitiveSearchName + ".search.windows.net/skillsets/" + $skillsetName + "?api-version=2019-05-06"
+    Invoke-RestMethod `
+        -Uri $skillsetUrl `
+        -Headers $skillsetHeader `
+        -Method Put `
+        -Body $skillsetBody
+
+
+    # Create Cognitive Search Indexer
+    Write-Host Creating cognitive search indexer...
+    $indexerHeader = @{
+        "api-key" = $cognitiveSearchKey
+    }
+    $information = @(
+        ($indexerNameW2, $dataSourceNameW2),
+        ($indexerNameFinancial, $dataSourceNameFinancial)
+    )
+    foreach ($info in $information) {
+        $indexerName = $info[0]
+        $datasource = $info[1]
+
+        $indexerUrl = "https://" + $cognitiveSearchName + ".search.windows.net/indexers/" + $indexerName + "?api-version=2019-05-06"
+        $indexerBody = '
+        {
+            "dataSourceName": "' + $datasource + '",
+            "targetIndexName": "' + $indexName + '",
+            "skillsetName": "' + $skillsetName + '",
+            "fieldMappings": [
+                {
+                    "sourceFieldName": "metadata_storage_path",
+                    "targetFieldName": "doc_id",
+                    "mappingFunction": {
+                        "name": "base64Encode"
+                    }
+                },
+                {
+                    "sourceFieldName": "metadata_storage_path",
+                    "targetFieldName": "doc_path"
+                },
+                {
+                    "sourceFieldName": "metadata_storage_name",
+                    "targetFieldName": "doc_name"
+                }
+            ],
+            "outputFieldMappings": [
+                {
+                    "sourceFieldName": "/document/organizations",
+                    "targetFieldName": "organizations"
+                },
+                {
+                    "sourceFieldName": "/document/persons",
+                    "targetFieldName": "persons"
+                },
+                {
+                    "sourceFieldName": "/document/locations",
+                    "targetFieldName": "locations"
+                },
+                {
+                    "sourceFieldName": "/document/keyPhrases",
+                    "targetFieldName": "keyPhrases"
+                }
+            ],
+            "parameters": {
+                "batchSize": 1,
+                "maxFailedItems": -1,
+                "maxFailedItemsPerBatch": -1,
+                "configuration": {
+                    "dataToExtract": "contentAndMetadata",
+                    "imageAction": "generateNormalizedImages"
+                }
+            }
+        }'
+        Invoke-RestMethod `
+            -Method Put `
+            -Uri $indexerUrl `
+            -Headers $indexerHeader `
+            -Body $indexerBody `
+            -ContentType "application/json"
+    }
+}
+$stage6 += $job.Id
+
+
 Process_Jobs -idArray $stage6
 
 
@@ -771,3 +1164,4 @@ Process_Jobs -idArray $stage8
 
 Write-Host Deployment complete.`n
 Write-Host Navigate to: $websiteUrl
+Start-Process $websiteUrl
