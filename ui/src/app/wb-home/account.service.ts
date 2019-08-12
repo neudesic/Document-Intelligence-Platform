@@ -21,16 +21,16 @@ export class AccountService {
   }
 
   async getInfo() {
-    // await this.http.get('../../config.json').subscribe(val => this.cosmosAccount = String(val['cosmosAccount']));
-    // await this.http.get('../../config.json').subscribe(val => this.storageAccount = String(val['storageAccount']));
-    // await this.http.get('../../config.json').subscribe(val => this.cosmosKey = String(val['cosmosAccessKey']));
-    // await this.http.get('../../config.json').subscribe(val => this.searchAccount = String(val['searchAccount']));
-    // await this.http.get('../../config.json').subscribe(val => this.searchKey = String(val['searchKey']));
-    await this.http.get('../../assets/config.json').subscribe(val => this.cosmosAccount = String(val['cosmosAccount']));
-    await this.http.get('../../assets/config.json').subscribe(val => this.storageAccount = String(val['storageAccount']));
-    await this.http.get('../../assets/config.json').subscribe(val => this.cosmosKey = String(val['cosmosAccessKey']));
-    await this.http.get('../../assets/config.json').subscribe(val => this.searchAccount = String(val['searchAccount']));
-    await this.http.get('../../assets/config.json').subscribe(val => this.searchKey = String(val['searchKey']));
+    await this.http.get('../../config.json').subscribe(val => this.cosmosAccount = String(val['cosmosAccount']));
+    await this.http.get('../../config.json').subscribe(val => this.storageAccount = String(val['storageAccount']));
+    await this.http.get('../../config.json').subscribe(val => this.cosmosKey = String(val['cosmosAccessKey']));
+    await this.http.get('../../config.json').subscribe(val => this.searchAccount = String(val['searchAccount']));
+    await this.http.get('../../config.json').subscribe(val => this.searchKey = String(val['searchKey']));
+    // await this.http.get('../../assets/config.json').subscribe(val => this.cosmosAccount = String(val['cosmosAccount']));
+    // await this.http.get('../../assets/config.json').subscribe(val => this.storageAccount = String(val['storageAccount']));
+    // await this.http.get('../../assets/config.json').subscribe(val => this.cosmosKey = String(val['cosmosAccessKey']));
+    // await this.http.get('../../assets/config.json').subscribe(val => this.searchAccount = String(val['searchAccount']));
+    // await this.http.get('../../assets/config.json').subscribe(val => this.searchKey = String(val['searchKey']));
   }
 
 }

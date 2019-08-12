@@ -505,7 +505,6 @@ foreach ($containerName in $cosmosContainerNames) {
     $stage4 += $job.Id
 }
 
-## get searchkey
 
 # Populate Angular Configuration File
 $angularConfig = Get-Content $angularConfigFilePath | ConvertFrom-Json
