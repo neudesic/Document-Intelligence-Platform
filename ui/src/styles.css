@@ -1,0 +1,138 @@
+/* You can add global styles to this file, and also import other style files */
+
+@import "~bootstrap/dist/css/bootstrap.min.css";
+@import url("https://unpkg.com/ionicons@3.0.0/dist/css/ionicons.min.css");
+@import url("https://fonts.googleapis.com/css?family=Barlow:300,400,500,600,700,800");
+@import '~@angular/material/prebuilt-themes/indigo-pink.css';
+
+/* @import url("http://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css"); */
+
+@font-face {
+  font-family: 'Barlow';
+  src: url("https://fonts.googleapis.com/css?family=Barlow:300,400,500,600,700,800");
+  font-weight: normal;
+  font-style: normal;
+}
+
+
+input[type="text"], textarea:focus, input[type="text"], textarea {
+  outline: none;
+  box-shadow: none !important;
+  border-color: black !important;
+}
+
+a {
+  color: black;
+}
+
+a:link {
+  text-decoration: none;
+  color: black;
+}
+
+a:visited {
+  text-decoration: underline;
+  color: black;
+}
+
+/* a:hover {
+  text-decoration: underline;
+  background-color: none !important;
+  color: #7B45C7 !important;
+  border-color: #7B45C7 !important;
+} */
+
+a:active {
+  text-decoration: underline;
+  color: black;
+}
+
+body {
+  /*font-family: Barlow;*/
+  font-family: "Calibri";
+  background-color: #F8F9FE !important;
+}
+
+input.form-control {
+  border-color: black;
+}
+
+button.btn {
+  border-radius: 0%;
+  border-color: black;
+}
+
+.purple-hover:hover {
+  color:  rgb(98, 102, 155) !important; 
+  background-color: #5157c0;
+}
+
+.purple-hover:hover::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    margin-top: -10px;
+    border-width: 10px;
+    border-style: solid;
+    border-color: transparent transparent transparent #5157c0;;
+
+   }
+
+
+.purple-hover-btn:hover {
+  background-color:  rgb(98, 102, 155) !important;
+  color: #fff !important;
+}
+
+.white-hover-btn:hover {
+  background-color: #fff !important;
+  color:  rgb(98, 102, 155) !important; 
+  border-color: #7B45C7 !important;
+}
+
+/* button.btn:hover {
+  background-color: #fff !important;
+  color: #7B45C7 !important;
+  border-color: #7B45C7 !important;
+} */
+
+/* button.btn.search-btn:active button.btn.search-btn:active:focus,button.btn.search-btn:visited, button.btn.search-btn:focus, button.btn.menu.dropdown-toggle:active button.btn.menu.dropdown-toggle:active:focus, button.btn.menu.dropdown-toggle:visited, button.btn.menu.dropdown-toggle:focus {
+  box-shadow: 0 0 0 0.0rem white;
+}
+
+button.btn.search-btn:hover {
+  background-color: black !important;
+  color: white !important;
+  border-color: black !important;
+  outline: none;
+} */
+
+ul > li > a:focus {
+  background-color: #7B45C7 !important;
+}
+
+ul.nav li a, ul.nav li a:visited {
+  background-color: #7B45C7 !important;
+  color: white !important;
+}
+
+ul.nav li a:hover, ul.nav li a:active {
+  background-color: #7B45C7 !important;
+  color: white !important;
+}
+
+ul.nav li.active a {
+  background-color: #7B45C7 !important;
+  color: white !important;
+}
+
+.dropdown-toggle:after {
+  content: none;
+}
+
+.facet-title {
+  margin-top: 30px;
+  text-align: center;
+  width: 95%;
+}

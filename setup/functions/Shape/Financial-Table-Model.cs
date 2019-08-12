@@ -1,3 +1,7 @@
+/*
+Class representing a financial table
+*/
+
 namespace Setup.Shape
 {
     public class FinancialTableModel : Model
@@ -22,6 +26,10 @@ namespace Setup.Shape
 
         public FinancialTableModel()
         {
+            /*
+            Each instance variable is associated with a small string of text which is used to associate 
+            instance variables within this class, with keys in the Form Recognizer response 
+            */
             populateInformation = new KeyText[]
             {
                 new KeyText(nameof(income), "income income"),

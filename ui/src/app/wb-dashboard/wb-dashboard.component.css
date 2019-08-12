@@ -1,0 +1,139 @@
+
+.dashboard{
+    margin-left: 30px;
+    margin-right: 30px;
+}
+
+.dashboard-status-header,
+.dashboard-title{
+    font-size:25px;
+}
+
+.dashboard-header .sub-ttl {
+    font-size:14px;
+    padding-bottom:25px;
+}
+
+.dashboard-header[_ngcontent-c2] { 
+    color: #5B679A;   
+}
+
+.dashboard-header{
+    margin-bottom: 30px;
+}
+
+.dashboard-header .col-md-4 img {
+    width:100%;
+}
+
+.dashboard-notifications,
+.dashboard-status{     
+   padding: 15px;
+}
+
+.dashboard-status-header.col-md-8 {
+    background-color: white; 
+    box-shadow: rgba(56, 62, 68, 0.15) 0px 2px 11px 0px;
+    padding-left:0px;
+    padding-right:0px;    
+}
+
+.dashboard-status .col-md-4.graph {
+    padding-right:5px;
+}
+.dashboard-status .col-md-4 .graph-div, .dashboard-notifications .col-md-8, .dashboard-notifications .appoint-div {
+    background-color: white; 
+    box-shadow: rgba(56, 62, 68, 0.15) 0px 2px 11px 0px;
+    height:100%;
+}
+
+.dashboard-status .col-md-4 .graph-div img, .dashboard-notifications img {
+    width:100%;
+    height:100%;
+}
+
+.dashboard-status-header h1 {
+    border-bottom:1px solid #ccc;   
+    padding:20px;
+    color:#414E5A;
+}
+
+.dashboard-status-header h1 span {
+    display:inline-block;
+    float:right;
+    font-size:11px;
+    text-align: right;
+}
+
+.dashboard-status-header h1 .btn-link {
+    border:none;
+}
+
+.dashboard-status-header h1 select {
+    padding-left:15px;
+    padding-right:15px;
+    background:#EAEBF3;
+    margin-top:5px;
+}
+
+.dashboard-status-header .col-md-4 {
+    border-right:1px solid #ccc;
+    min-height: 180px;
+    text-align:center;
+    vertical-align:middle;
+    font-size:14px;
+    padding-top: 5%;
+    padding-bottom: 5%
+}
+
+.dashboard-status-header .col-md-4:last-child {
+    border-right:none;
+}
+
+.dashboard-status-header .col-md-4 span {
+    display:block;
+    margin-top: 10px;
+}
+
+.dashboard-status-header .col-md-4 span.figure {
+    font-size:36px;
+    font-weight:bold;
+    color:#FFA958;
+}
+
+.dashboard-status-header .col-md-4:nth-child(2) span.figure {
+    color:rgb(29, 186, 78);
+}
+
+.dashboard-status-header .col-md-4:nth-child(3) span.figure {
+    color:#EB6364;
+}
+.dashboard-status-header .col-md-4:nth-child(4) span.figure {
+    color:#7E66F9;
+}
+.dashboard-status-header .col-md-4 button {
+    border:none;
+    border-radius:5px;
+    background:#EAEBF3;
+    font-size:12px;
+    padding:3px 40px;
+    margin: 10px auto;
+}
+
+.dashboard-logo-half{
+    padding-top: 14px;
+    width:60%;
+    background-color: white;
+    border-width: 1px;
+    border-right-color:rgb(240, 234, 234);
+    border-right-width:2px;
+    box-shadow: 0px 4px  rgb(240, 234, 234)
+  }
+  
+  .header-search-half{
+    /* padding-top: 10px; */
+    width:40%;
+    background-color: white;
+    border-width: 1px;
+    box-shadow: -2px 4px  rgb(240, 234, 234)
+  } 

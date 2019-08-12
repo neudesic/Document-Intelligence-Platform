@@ -1,3 +1,16 @@
+/*
+Creates new data from either a w2 form or financial table depending on the value of the field "Form-Type"
+Financial Table: 
+- debt income ratio 
+- debt income ratio rating
+- insurance rating
+- mortgage rating
+- utility rating 
+W2 Form:
+- disposable income
+ */
+
+
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -28,6 +41,7 @@ namespace Setup.Enrich
                 Newtonsoft.Json.Linq.JObject data = (Newtonsoft.Json.Linq.JObject)JsonConvert.DeserializeObject(requestBody);
                 String header = req.Headers["Form-Type"];
 
+                // Calls a different process function depending on the value of the http response header "Form-Type" 
                 if (header == "Financial Table")
                 {
                     results = EnrichFinancial.Process(results, data);
@@ -39,12 +53,14 @@ namespace Setup.Enrich
             }
             catch
             {
+                // If "Form-Type" is not equal to either "Financial-Table" or "W2", an empty Dictionary is returned 
                 results = new Dictionary<String, String>();
             }
 
             return (IActionResult)new OkObjectResult(results);
         }
 
+        // Removes the dollar sign and commas from a string representation of a number and converts it to a double 
         public static double RemoveDollarSignComma(dynamic data)
         {
             if (data == null) return -1;
