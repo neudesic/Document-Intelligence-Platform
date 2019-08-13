@@ -148,12 +148,6 @@ function Process_Jobs {
         Receive-Job -Id $id
         Remove-Job -Id $id
     }
-    try {
-        Get-AzContext
-    }
-    catch {
-        Connect-AzAccount -Credential $credentials
-    }
 }
 
 
