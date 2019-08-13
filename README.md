@@ -87,7 +87,7 @@ The Document Intelligence Platform (**DIP**) is a prime example of a Cognitive S
 * Analysis
   * Processes the data from the various documents of a single applicant and produces new metrics such as spending forecasts and ratings.
 * Representation:
-  * Deploys a website which displays the resulting information in a 
+  * Deploys a website which displays the resulting information.
 
 # Build
 
