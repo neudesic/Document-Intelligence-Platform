@@ -1,0 +1,364 @@
+<div class="container-fluid" *ngIf="w2 && w2Enriched && financial && financialEnriched && processed">
+  <div class="row title-row">
+    <div>
+      <div class="row" style="margin-left: 2%; margin-top: 1%">
+        <i class="icon ion-ios-contact usr-icon"></i>
+        <div class="col-10">
+          <div class="row">
+            <div class="col name">{{w2.employeeInformation}}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row detail-row" style="margin-top: -1%">
+    <div class="col-4">
+      <div class="container v-tab" style="margin-top: -12px;">
+        <ul class="nav nav-pills nav nav-stacked flex-column nav-tabs">
+          <li class="active">
+            <a href="#1employment" data-toggle="tab">
+              <div class="row">
+                <div class="col-8 tab-lable">Debt Income Ratio</div>
+                <div class="col-2 tab-value my-grade"><b>{{financialEnriched.debtIncomeRatioRating}}</b></div>
+              </div>
+            </a>
+          </li>
+          <li><a href="#4income" data-toggle="tab">
+              <div class="row">
+                <div class="col-8 tab-lable">Insurance Rating</div>
+                <div class="col-2 tab-value my-grade"><b>{{financialEnriched.insuranceRating}}</b></div>
+              </div>
+            </a>
+          </li>
+          <li><a href="#5credit" data-toggle="tab">
+              <div class="row">
+                <div class="col-8 tab-lable">Mortgage Rating</div>
+                <div class="col-2 tab-value my-grade"><b>{{financialEnriched.mortgageRating}}</b></div>
+              </div>
+            </a>
+          </li>
+          <li><a href="#2assets" data-toggle="tab">
+              <div class="row">
+                <div class="col-8 tab-lable">Yearly Net</div>
+              </div>
+            </a>
+          </li>
+          <li><a href="#3application" data-toggle="tab">
+              <div class="row">
+                <div class="col-8 tab-lable">Disposable Income</div>
+              </div>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="col-4 tab-content clearfix" style="margin-top:3%;">
+      <div class="tab-pane active" id="1employment">
+        <div class="row ">
+          <div class="col-1"></div>
+          <div class="my-col-5 panel panel-default" style="padding:5px;  margin-right:8px;">
+            <div>
+              <div style="text-align: center; vertical-align:middle; margin-top:15px;">
+                <span style="font-size: 26px; margin-bottom: 2px; ">{{financialEnriched.debtIncomeRatio}}</span>
+                <br />
+                Debt-to-income
+                <br />
+                Ratio
+              </div>
+            </div>
+          </div>
+          <div class="my-col-5 panel panel-default" style="padding:5px;  min-height:125px;  ">
+            <div>
+              <div style="text-align: center; vertical-align:middle; margin-top:15px;">
+                <span style="font-size: 26px; margin-bottom: 2px; ">{{totalDebt}}</span>
+                <br />
+                Total Monthly
+                <br />
+                Debt
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="1employment" class="row insight-optns" style="min-height: 90px;   margin-top:-2px !important">
+          <div class="col-1"></div>
+          <div class="col-10 panel panel-default" style="background-color:#fafafb; z-index:1000;">
+            <div style="margin-top:0%;">
+              <div style="text-align: center; vertical-align:middle;">
+                <span style="font-size: 26px; margin-bottom: 2px; ">{{financial.totalMonthlyIncome}}</span>
+                <br />
+                Total Monthly
+                <br />
+                Gross Income
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-pane" id="2assets">
+        <div class="row ">
+          <div class="col-1"></div>
+          <div class="my-col-5 panel panel-default" style="padding:5px; margin-right:8px; ">
+            <div>
+              <div style="text-align: center; vertical-align:middle; margin-top:15px;">
+                <span style="font-size: 26px; margin-bottom: 2px; ">{{yearlyNet}}</span>
+                <br />
+                Yearly Net
+                <br />
+                Forecast
+              </div>
+            </div>
+          </div>
+          <div class="my-col-5 panel panel-default" style="padding:5px; min-height:125px;">
+            <div>
+              <div style="text-align: center; vertical-align:middle; margin-top:15px;">
+                <span style="font-size: 26px; margin-bottom: 2px; ">{{totalExpense}}</span>
+                <br />
+                Total Expense
+                <br />
+                Forecast
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-pane" id="3application">
+        <div class="row ">
+          <div class="col-1"></div>
+          <div class="my-col-5 panel panel-default" style="padding:5px; margin-right:8px; ">
+            <div>
+              <div style="text-align: center; vertical-align:middle; margin-top:15px;">
+                <span style="font-size: 26px; margin-bottom: 2px; ">{{grossIncome}}</span>
+                <br />
+                Gross Income
+              </div>
+            </div>
+          </div>
+          <div class="my-col-5 panel panel-default" style="padding:5px; min-height:125px;">
+            <div>
+              <div style="text-align: center; vertical-align:middle; margin-top:15px;">
+                <span style="font-size: 26px; margin-bottom: 2px; ">{{totalTaxes}}</span>
+                <br />
+                Total Taxes
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="1employment" class="row insight-optns" style="min-height: 90px;   margin-top:0px !important">
+          <div class="col-1"></div>
+          <div class="col-10 panel panel-default" style="background-color:#fafafb; z-index:1000;">
+            <div style="margin-top:0%;">
+              <div style="text-align: center; vertical-align:middle; margin-top:5px;">
+                <span style="font-size: 26px; margin-bottom: 2px; ">{{disposableIncome}}</span>
+                <br />
+                Disposable Income
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-pane" id="4income">
+        <div class="row ">
+          <div class="col-1"></div>
+          <div class="my-col-5 panel panel-default" style="padding:5px; margin-right:8px; ">
+            <div>
+              <div style="text-align: center; vertical-align:middle; margin-top:15px; ">
+                <span style="font-size: 26px; margin-bottom: 2px; ">{{financial.insuranceSubtotal}}</span>
+                <br />
+                Monthly Insurance
+                <br />
+                Cost
+              </div>
+            </div>
+          </div>
+          <div class="my-col-5 panel panel-default" style="padding:5px; min-height:125px; ">
+            <div>
+              <div style="text-align: center; vertical-align:middle; margin-top:15px;">
+                <span style="font-size: 26px; margin-bottom: 2px; ">{{percentageGrossIncomeInsurance}}</span>
+                <br />
+                Percentage of
+                <br />
+                Gross Income
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-pane" id="5credit">
+        <div class="row ">
+          <div class="col-1"></div>
+          <div class="my-col-5 panel panel-default" style="padding:5px; margin-right:8px;">
+            <div>
+              <div style="text-align: center; vertical-align:middle; margin-top:15px;">
+                <span style="font-size: 26px; margin-bottom: 2px; ">{{financial.mortgageOrRent}}</span>
+                <br />
+                Monthly Mortgage
+              </div>
+            </div>
+          </div>
+          <div class="my-col-5 panel panel-default" style="padding:5px; min-height:125px;">
+            <div>
+              <div style="text-align: center; vertical-align:middle; margin-top:15px;">
+                <span style="font-size: 26px; margin-bottom: 2px; ">{{percentageGrossIncomeMortgage}}</span>
+                <br />
+                Percentage of
+                <br />
+                Gross Income
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row" style="margin-top: -2%">
+    <div class="col col-tab" style="min-height: 500px">
+      <mat-tab-group>
+        <mat-tab label="W2">
+          <div class="col outlet">
+            <div class="w2Pdf">
+              <pdf-viewer [src]="w2Pdf" [original-size]="true" [fit-to-page]="false"></pdf-viewer>
+            </div>
+            <div class="w2Table">
+              <table class="mat-table">
+                <tr class="mat-row">
+                  <th class="mat-cell">Social Security:</th>
+                  <td class="mat-cell">{{w2.ss}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Identification Number:</th>
+                  <td class="mat-cell">{{w2.identificationNumber}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Compensation:</th>
+                  <td class="mat-cell">{{w2.compensation}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Federal Income Tax Withheld:</th>
+                  <td class="mat-cell">{{w2.federalIncomeTaxWithheld}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Employer Information:</th>
+                  <td class="mat-cell">{{w2.employerInformation}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Social Security Wages:</th>
+                  <td class="mat-cell">{{w2.ssWages}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Social Security Tax Withheld:</th>
+                  <td class="mat-cell">{{w2.ssTaxWithheld}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Medicare Wages:</th>
+                  <td class="mat-cell">{{w2.medicareWages}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Medicare Tax Withheld:</th>
+                  <td class="mat-cell">{{w2.ssTips}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Control Number:</th>
+                  <td class="mat-cell">{{w2.controlNumber}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Dependent Care Benefits:</th>
+                  <td class="mat-cell">{{w2.dependentCareBenifits}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Employee Information:</th>
+                  <td class="mat-cell">{{w2.employeeInformation}}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </mat-tab>
+        <mat-tab label="Expenses">
+          <div class="col outlet">
+            <div class="financialPdf">
+              <pdf-viewer [src]="financialPdf" [original-size]="true" [fit-to-page]="false"></pdf-viewer>
+            </div>
+            <div class="financialTable">
+              <table class="mat-table">
+                <tr class="mat-row">
+                  <th class="mat-cell">Income:</th>
+                  <td class="mat-cell">{{financial.income}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Extra Income:</th>
+                  <td class="mat-cell">{{financial.extraIncome}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Total Monthly Income:</th>
+                  <td class="mat-cell">{{financial.totalMonthlyIncome}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Mortgage / Rent:</th>
+                  <td class="mat-cell">{{financial.mortgageOrRent}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Phone:</th>
+                  <td class="mat-cell">{{financial.phone}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Electricity:</th>
+                  <td class="mat-cell">{{financial.electricity}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Housing Subtotal:</th>
+                  <td class="mat-cell">{{financial.housingSubtotal}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Personal:</th>
+                  <td class="mat-cell">{{financial.personal}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Student:</th>
+                  <td class="mat-cell">{{financial.student}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Credit Card:</th>
+                  <td class="mat-cell">{{financial.creditCard}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Loans Subtotal:</th>
+                  <td class="mat-cell">{{financial.loansSubtotal}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Home:</th>
+                  <td class="mat-cell">{{financial.home}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Health:</th>
+                  <td class="mat-cell">{{financial.health}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Insurance Subtotal:</th>
+                  <td class="mat-cell">{{financial.insuranceSubtotal}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Total Actual Cost:</th>
+                  <td class="mat-cell">{{financial.totalActualCost}}</td>
+                </tr>
+                <tr class="mat-row">
+                  <th class="mat-cell">Actual Balance:</th>
+                  <td class="mat-cell">{{financial.actualBalance}}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </div>
+  </div>
+  <div class="row btn-row">
+    <div class="col-8"></div>
+    <div class="col-2">
+      <button type="button" class="btn btn-outline-success btn-lg" (click)="approveLoan()" [disabled]="isActive">
+        Accept <i class="fa fa-check-circle-o"></i></button>
+    </div>
+    <div class="col-2">
+      <button type="button" class="btn btn-outline-danger btn-lg" (click)="rejectLoan()" [disabled]="isActive">
+        Reject <i class="fa fa-times-circle-o"></i></button>
+    </div>
+  </div>
+</div>

@@ -1,3 +1,7 @@
+/*
+Class representing a W2 from
+*/
+
 namespace Setup.Shape
 {
     public class W2Model : Model
@@ -18,6 +22,10 @@ namespace Setup.Shape
 
         public W2Model()
         {
+            /*
+            Each instance variable is associated with a small string of text which is used to associate 
+            instance variables within this class, with keys in the Form Recognizer response 
+            */
             populateInformation = new KeyText[]
             {
                 new KeyText(nameof(ss), "Employee’s social security"),

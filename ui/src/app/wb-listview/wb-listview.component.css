@@ -1,0 +1,67 @@
+.listview {
+  margin: 10px auto;
+  width: 100%;
+}
+
+.listview-header {
+  padding-bottom: 50px;
+}
+
+.listview-title {
+  font-size: 25px;
+  color: #5b679a;
+}
+
+.listview-body-title {
+  color: #5b679a;
+  font-size: 15px;
+  text-align: right;
+}
+.listview-seperator {
+  padding-top: 20px;
+}
+
+.listview-body {
+  background-color: transparent;
+  width: 100%;
+}
+
+table {
+  width: 100%;
+}
+
+th.mat-sort-header-sorted {
+  color: black;
+}
+
+
+.element-row:not(.expanded) {
+  cursor: pointer;
+}
+
+tr.mat-header-row {
+    height: 56px;
+    /*box-shadow: 0 5px 5px -3px rgba(0,0,0,.2), 0 8px 10px 1px rgba(0,0,0,.14), 0 3px 14px 2px rgba(0,0,0,.12); */
+    box-shadow:none;
+    background-color: #F8F9FE;
+}
+
+.mat-elevation-z8 {
+    box-shadow: none;
+    border-collapse: separate;
+    background:transparent;
+}
+
+table.mat-table {
+    border-spacing: 0em .4em;
+}
+
+tr.mat-footer-row, tr.mat-row {  
+    box-shadow: 0 2px 4px 0 rgba(218, 218, 218, 0.5);   
+    background: #fff;
+    height: 40px;
+}
+
+.mat-table {
+    font-family: "Calibri";
+}

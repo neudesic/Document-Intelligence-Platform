@@ -1,3 +1,8 @@
+/*
+Class representing Form Recognizer REST api response
+*/
+
+
 using System.Globalization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -48,11 +53,13 @@ namespace Setup.Shape
         [JsonProperty("value")]
         public Value[] Value { get; set; }
 
+        // Checks if the instance of this KeyValuePair Class contains the key = "text"
         public bool ContainsKey(String text)
         {
             return Key[0].Text.ToLower().Contains(text.ToLower());
         }
 
+        // Concats the the "Value[]" array of strings into a single string 
         public string ConcatValues()
         {
             string result = "";

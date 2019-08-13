@@ -1,0 +1,132 @@
+.container,
+.container-fluid {
+  padding-right: 0;
+  padding-left: 0;
+  margin-right: 0;
+  margin-left: 0;
+}
+
+.container > .row,
+.container-fluid > .row {
+  padding-right: 15px;
+  padding-left: 15px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.header-logo-half{
+  padding-top: 14px;
+  width:60%;
+  background-color: white;
+  border-width: 1px;
+  border-right-color:rgb(240, 234, 234);
+  border-right-width:2px;
+  box-shadow: 0px 4px  rgb(240, 234, 234)
+}
+
+.header-search-half{
+  /* padding-top: 10px; */
+  width:40%;
+  background-color: white;
+  border-width: 1px;
+  box-shadow: -2px 4px  rgb(240, 234, 234)
+}
+
+.header-logo{
+  width:65%;
+  margin-left:90px;
+  padding-bottom: 10px;
+  font-size:25px;
+}
+
+.header-search{
+  width:95%;
+  /* margin-right:5px; */
+}
+
+.header-search-input{
+  border-color: lightgrey;
+  /* margin-right:5px; */
+}
+.content{
+  width:100%;
+  margin-left:70px;
+  background-color: inherit;
+  display: inline-block;
+  border-bottom-color: slategrey;
+  border-right-color: slategrey;
+
+}
+
+.navbar-brand {
+  width:50%;
+  margin-left: 10%;
+  
+}
+
+.sidenav {
+  height: 100%; /* Full-height: remove this if you want "auto" height */
+  width: 60px; /* Set the width of the sidebar */
+  position: fixed; /* Fixed Sidebar (stay in place on scroll) */
+  z-index: 1; /* Stay on top */
+  top: 0; /* Stay at the top */
+  left: 0;
+  background-color: rgb(98, 102, 155) !important;
+  /* background-color: #111; Black */
+  overflow-x: hidden; /* Disable horizontal scroll */
+  padding-top: 0px;
+  outline:0px;
+}
+
+/* The navigation menu links */
+.sidenav a{
+  /* padding: 6px 8px 6px 18px; */
+  text-decoration: none;
+  padding-bottom: 20px;
+  font-size: 25px;
+  color: white;
+  display: block;
+  text-align:center;
+}
+
+.nav-top-logo {
+  /* padding: 0px 8px 50px 12px; */
+  top: 0;
+  padding-bottom:50px;
+  position: relative;
+  text-decoration: none;
+  font-size: 45px;
+  color: white;
+  display: block;
+  text-align:center;
+}
+
+.bottom{
+  position: absolute;
+  display: block;
+  bottom: 0;
+  text-align:center;
+  margin-left:30%;
+
+
+}
+
+.bottom a{
+  text-decoration: none;
+  padding-bottom: 20px;
+  font-size: 25px;
+  color: white;
+  display: block;
+}
+
+/* When you mouse over the navigation links, change their color */
+.sidenav a:hover {
+  color: white !important;
+  zoom: 120%;
+  margin-left: -10px;
+
+}
+
+.icon-color {
+  color:  black !important;
+}

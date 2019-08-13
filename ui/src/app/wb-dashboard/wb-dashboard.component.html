@@ -1,0 +1,28 @@
+<div class="dashboard-header row">
+  <div class="dashboard-title col-md-12"> Welcome!</div>
+</div>
+<div class="dashboard-status row">
+  <div class="dashboard-status-header col-md-8">
+    <div class="col-md-4 col-sm-4">
+      <span *ngIf="applicantStatus.loaded == true" class="figure">{{applicantStatus.pendingApplicants.length}}</span>
+      <span *ngIf="applicantStatus.loaded == false" class="figure">-</span>
+      <span>Loans Pending Review</span>
+      <span><button *ngIf="applicantStatus.loaded == true" [routerLink]="['/Home/ListView']"
+          [queryParams]="{ status: 'pending' }">View</button></span>
+      <span><button *ngIf="applicantStatus.loaded == false" [routerLink]="['/Home/ListView']"
+          [queryParams]="{ status: 'pending' }">Load Applicants</button></span>
+    </div>
+    <div class="col-md-4 col-sm-4">
+      <span class="figure">{{applicantStatus.approvedApplicants.length}}</span>
+      <span>Approved Loans</span>
+      <span><button [routerLink]="['/Home/ListView']" [queryParams]="{ status: 'approved' }">View</button></span>
+    </div>
+    <div class="col-md-4 col-sm-4">
+      <span class="figure">{{applicantStatus.rejectedApplicants.length}}</span>
+      <span>Rejected Loans</span>
+      <span><button [routerLink]="['/Home/ListView']" [queryParams]="{ status: 'rejected' }">View</button></span>
+    </div>
+  </div>
+</div>
+<div class="row">
+</div>
