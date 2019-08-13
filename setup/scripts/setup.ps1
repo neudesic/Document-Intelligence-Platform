@@ -112,8 +112,7 @@ Connect-AzAccount -Credential $credentials
 # Set Subscription Id
 while ($TRUE) {
     try {
-        # $subscriptionId = Read-Host -Prompt "Input subscription Id"
-        $subscriptionId = "a848f8b4-b83b-4023-aba6-e71dab80977a"
+        $subscriptionId = Read-Host -Prompt "Input subscription Id"
         Set-AzContext `
             -SubscriptionId $subscriptionId
         break  
@@ -148,6 +147,12 @@ function Process_Jobs {
         Wait-Job -Id $id
         Receive-Job -Id $id
         Remove-Job -Id $id
+    }
+    try {
+        Get-AzContext
+    }
+    catch {
+        Connect-AzAccount -Credential $credentials
     }
 }
 
