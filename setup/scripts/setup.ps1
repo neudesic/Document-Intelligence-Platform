@@ -148,12 +148,6 @@ function Process_Jobs {
         Receive-Job -Id $id
         Remove-Job -Id $id
     }
-    try {
-        Get-AzContext
-    }
-    catch {
-        Connect-AzAccount -Credential $credentials
-    }
 }
 
 
@@ -170,7 +164,14 @@ Write-Host Registering resource providers:`n
 foreach ($resourceProvider in $resourceProviders) {
     Write-Host - Registering $resourceProvider
     $job = Start-Job -ArgumentList $resourceProvider, $credentials -ScriptBlock {
-        Connect-AzAccount -Credential $args[1]
+        $ErrorActionPreference = "Stop"
+        while ($TRUE) {
+            try {
+                Connect-AzAccount -Credential $args[1]
+                break
+            }
+            catch { }
+        }
         Register-AzResourceProvider `
             -ProviderNamespace $args[0]
     }
@@ -181,7 +182,14 @@ foreach ($resourceProvider in $resourceProviders) {
 # Create Resource Group 
 Write-Host `nCreating Resource Group $resourceGroupName"..."`n
 $job = Start-Job -ArgumentList $resourceGroupName, $location, $credentials -ScriptBlock {
-    Connect-AzAccount -Credential $args[2]
+    $ErrorActionPreference = "Stop"
+    while ($TRUE) {
+        try {
+            Connect-AzAccount -Credential $args[2]
+            break
+        }
+        catch { }
+    }
     New-AzResourceGroup `
         -Name $args[0] `
         -Location $args[1] `
@@ -218,7 +226,14 @@ $cosmosProperties = @{
     "enableMultipleWriteLocations" = "true"
 }
 $job = Start-Job -ArgumentList $resourceGroupName, $location, $cosmosAccountName, ($cosmosProperties | ConvertTo-Json), $credentials -ScriptBlock {
-    Connect-AzAccount -Credential $args[4]
+    $ErrorActionPreference = "Stop"
+    while ($TRUE) {
+        try {
+            Connect-AzAccount -Credential $args[4]
+            break
+        }
+        catch { }
+    }
     New-AzResource `
         -ResourceType "Microsoft.DocumentDb/databaseAccounts" `
         -ApiVersion "2015-04-08" `
@@ -234,8 +249,14 @@ $stage2 += $job.Id
 # Create Storage Account
 Write-Host Creating storage account...
 $job = Start-Job -ArgumentList $resourceGroupName, $storageAccountName, $location, $credentials -ScriptBlock {
-    Connect-AzAccount -Credential $args[3]
     $ErrorActionPreference = "Stop"
+    while ($TRUE) {
+        try {
+            Connect-AzAccount -Credential $args[3]
+            break
+        }
+        catch { }
+    }
     try {
         $storageAccount = Get-AzStorageAccount `
             -ResourceGroupName $args[0] `
@@ -264,7 +285,14 @@ $stage2 += $job.Id
 # Create Form Recognizer Account
 Write-Host Creating Form Recognizer service...
 $job = Start-Job -ArgumentList $resourceGroupName, $formRecognizerName, $formRecognizerLocation, $credentials -ScriptBlock {
-    Connect-AzAccount -Credential $args[3]
+    $ErrorActionPreference = "Stop"
+    while ($TRUE) {
+        try {
+            Connect-AzAccount -Credential $args[3]
+            break
+        }
+        catch { }
+    }
     New-AzCognitiveServicesAccount `
         -ResourceGroupName $args[0] `
         -Name $args[1] `
@@ -278,7 +306,14 @@ $stage2 += $job.Id
 # Create App Service Plan
 Write-Host Creating app service plan...
 $job = Start-Job -ArgumentList $appServicePlanName, $location, $resourceGroupName, $credentials -ScriptBlock {
-    Connect-AzAccount -Credential $args[3]
+    $ErrorActionPreference = "Stop"
+    while ($TRUE) {
+        try {
+            Connect-AzAccount -Credential $args[3]
+            break
+        }
+        catch { }
+    }
     New-AzAppServicePlan `
         -Name $args[0] `
         -Location $args[1] `
@@ -291,7 +326,14 @@ $stage2 += $job.Id
 # Create Cognitive Search Service
 Write-Host Creating Cognitive Search Service...
 $job = Start-Job -ArgumentList $resourceGroupName, $cognitiveSearchName, $location, $credentials -ScriptBlock {
-    Connect-AzAccount -Credential $args[3]
+    $ErrorActionPreference = "Stop"
+    while ($TRUE) {
+        try {
+            Connect-AzAccount -Credential $args[3]
+            break
+        }
+        catch { }
+    }
     New-AzSearchService `
         -ResourceGroupName $args[0] `
         -Name $args[1] `
@@ -325,7 +367,14 @@ $cosmosDatabaseProperties = @{
 } 
 $cosmosResourceName = $cosmosAccountName + "/sql/" + $cosmosDatabaseName
 $job = Start-Job -ArgumentList $resourceGroupName, $cosmosResourceName, ($cosmosDatabaseProperties | ConvertTo-Json), $credentials -ScriptBlock {
-    Connect-AzAccount -Credential $args[3]
+    $ErrorActionPreference = "Stop"
+    while ($TRUE) {
+        try {
+            Connect-AzAccount -Credential $args[3]
+            break
+        }
+        catch { }
+    }
     New-AzResource `
         -ResourceType "Microsoft.DocumentDb/databaseAccounts/apis/databases" `
         -ApiVersion "2015-04-08" `
@@ -342,8 +391,14 @@ Write-Host Creating blob containers...
 $storageContainerNames = @($storageContainerW2, $storageContainerW2Training, $storageContainerFinancial, $storageContainerFinancialTraining)
 foreach ($containerName in $storageContainerNames) {
     $job = Start-Job -ArgumentList $resourceGroupName, $storageAccountName, $containerName, $credentials -ScriptBlock {
-        Connect-AzAccount -Credential $args[3]
         $ErrorActionPreference = "Stop"
+        while ($TRUE) {
+            try {
+                Connect-AzAccount -Credential $args[3]
+                break
+            }
+            catch { }
+        }
         $storageAccount = Get-AzStorageAccount `
             -ResourceGroupName $args[0] `
             -Name $args[1]
@@ -380,7 +435,14 @@ foreach ($info in $functionAppInformation) {
     # Create Function App
     Write-Host Creating Function App $name"..."
     $job = Start-Job -ArgumentList $resourceGroupName, $location, $name, ($functionAppSettings | ConvertTo-Json), $storageAccountName, $filepath, $credentials -ScriptBlock {
-        Connect-AzAccount -Credential $args[6]
+        $ErrorActionPreference = "Stop"
+        while ($TRUE) {
+            try {
+                Connect-AzAccount -Credential $args[6]
+                break
+            }
+            catch { }
+        }
         New-AzResource `
             -ResourceGroupName $args[0] `
             -Location $args[1] `
@@ -472,7 +534,14 @@ foreach ($info in $apiConnectionInformation) {
     $parametersFilePath = $info[2]
     Write-Host Deploying $connectionName"..."
     $job = Start-Job -ArgumentList $resourceGroupName, $connectionName, $templateFilePath, $parametersFilePath, $credentials -ScriptBlock {
-        Connect-AzAccount -Credential $args[4]
+        $ErrorActionPreference = "Stop"
+        while ($TRUE) {
+            try {
+                Connect-AzAccount -Credential $args[4]
+                break
+            }
+            catch { }
+        }
         New-AzResourceGroupDeployment `
             -ResourceGroupName $args[0] `
             -Name $args[1] `
@@ -502,7 +571,14 @@ foreach ($containerName in $cosmosContainerNames) {
     $containerResourceName = $cosmosAccountName + "/sql/" + $cosmosDatabaseName + "/" + $containerName
     $job = Start-Job -ArgumentList $resourceGroupName, $containerResourceName, $containerName, $credentials `
         -ScriptBlock {
-        Connect-AzAccount -Credential $args[3]
+        $ErrorActionPreference = "Stop"
+        while ($TRUE) {
+            try {
+                Connect-AzAccount -Credential $args[3]
+                break
+            }
+            catch { }
+        }
         $cosmosContainerProperties = @{
             "resource" = @{
                 "id"           = $args[2]; 
@@ -549,7 +625,14 @@ foreach ($info in $trainingInfo) {
     $containerName = $info[1]
     $files = Get-ChildItem $filePath
     $job = Start-Job -ArgumentList $filepath, $files, $containerName, $resourceGroupName, $storageAccountName, $credentials -ScriptBlock {
-        Connect-AzAccount -Credential $args[5]
+        $ErrorActionPreference = "Stop"
+        while ($TRUE) {
+            try {
+                Connect-AzAccount -Credential $args[5]
+                break
+            }
+            catch { }
+        }
         foreach ($file in $args[1]) {
             Write-Host - Uploading $file.Name
             $storageAccount = Get-AzStorageAccount `
@@ -619,7 +702,14 @@ $formRecognizerModels = @{ }
 $storageContainerTraining = @($storageContainerW2Training, $storageContainerFinancialTraining)
 foreach ($containerName in $storageContainerTraining) {
     $job = Start-Job -ArgumentList $containerName, $formRecognizeHeader, $formRecognizerTrainUrl, $resourceGroupName, $storageAccountName, $credentials -ScriptBlock {
-        Connect-AzAccount -Credential $args[5]
+        $ErrorActionPreference = "Stop"
+        while ($TRUE) {
+            try {
+                Connect-AzAccount -Credential $args[5]
+                break
+            }
+            catch { }
+        }
         $storageAccount = Get-AzStorageAccount `
             -ResourceGroupName $args[3] `
             -Name $args[4]
@@ -691,7 +781,14 @@ $logicApp1Parameters.cosmos_container_w2_enriched.value = $cosmosContainerW2Enri
 $logicApp1ParametersTemplate | ConvertTo-Json | Out-File $logicApp1ParametersFilePath
 Write-Host Deploying Logic App 1...
 $job = Start-Job -ArgumentList $resourceGroupName, $logicApp1Name, $logicApp1TemplateFilePath, $logicApp1ParametersFilePath, $credentials -ScriptBlock {
-    Connect-AzAccount -Credential $args[4]
+    $ErrorActionPreference = "Stop"
+    while ($TRUE) {
+        try {
+            Connect-AzAccount -Credential $args[4]
+            break
+        }
+        catch { }
+    }
     New-AzResourceGroupDeployment `
         -ResourceGroupName $args[0] `
         -Name $args[1] `
@@ -717,7 +814,14 @@ $logicApp2Parameters.cosmos_container_processed.value = $cosmosContainerProcesse
 $logicApp2ParametersTemplate | ConvertTo-Json | Out-File $logicApp2ParametersFilePath
 Write-Host Deploying Logic App 2...
 $job = Start-Job -ArgumentList $resourceGroupName, $logicApp2Name, $logicApp2TemplateFilePath, $logicApp2ParametersFilePath, $credentials -ScriptBlock {
-    Connect-AzAccount -Credential $args[4]
+    $ErrorActionPreference = "Stop"
+    while ($TRUE) {
+        try {
+            Connect-AzAccount -Credential $args[4]
+            break
+        }
+        catch { }
+    }
     New-AzResourceGroupDeployment `
         -ResourceGroupName $args[0] `
         -Name $args[1] `
@@ -732,7 +836,14 @@ Write-Host Configuring Cognitive Search Service...
 $job = Start-Job -ArgumentList $resourceGroupName, $cognitiveSearchName, $location, $storageAccountName, $storageContainerW2, $storageContainerFinancial, `
     $dataSourceNameW2, $dataSourceNameFinancial, $indexName, $skillsetName, $indexerNameW2, $indexerNameFinancial, $credentials `
     -ScriptBlock {
-    Connect-AzAccount -Credential $args[12]
+    $ErrorActionPreference = "Stop"
+    while ($TRUE) {
+        try {
+            Connect-AzAccount -Credential $args[12]
+            break
+        }
+        catch { }
+    }
     $resourceGroupName = $args[0]
     $cognitiveSearchName = $args[1]
     $storageAccountName = $args[3]
@@ -1116,7 +1227,14 @@ foreach ($info in $runInformation) {
             "formType" = $formType
         } | ConvertTo-Json
         $job = Start-Job -ArgumentList $logicAppTriggerUri, ($body | ConvertTo-Json), $credentials -ScriptBlock {
-            Connect-AzAccount -Credential $args[2]
+            $ErrorActionPreference = "Stop"
+            while ($TRUE) {
+                try {
+                    Connect-AzAccount -Credential $args[2]
+                    break
+                }
+                catch { }
+            }
             Invoke-RestMethod `
                 -Uri $args[0] `
                 -Method Post `
@@ -1155,7 +1273,14 @@ foreach ($file in $container) {
         "recordId" = $file.Name
     } | ConvertTo-Json
     $job = Start-Job -ArgumentList $logicAppTriggerUri, ($body | ConvertTo-Json), $credentials -ScriptBlock {
-        Connect-AzAccount -Credential $args[2]
+        $ErrorActionPreference = "Stop"
+        while ($TRUE) {
+            try {
+                Connect-AzAccount -Credential $args[2]
+                break
+            }
+            catch { }
+        }
         Invoke-RestMethod `
             -Uri $args[0] `
             -Method Post `
