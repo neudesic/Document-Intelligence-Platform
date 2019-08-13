@@ -105,13 +105,15 @@ $ErrorActionPreference = "Stop"
 
 # Sign In
 Write-Host Logging in...
-Connect-AzAccount
+$credentials = Get-Credential
+Connect-AzAccount -Credential $credentials
 
 
 # Set Subscription Id
 while ($TRUE) {
     try {
-        $subscriptionId = Read-Host -Prompt "Input subscription Id"
+        # $subscriptionId = Read-Host -Prompt "Input subscription Id"
+        $subscriptionId = "a848f8b4-b83b-4023-aba6-e71dab80977a"
         Set-AzContext `
             -SubscriptionId $subscriptionId
         break  
@@ -120,7 +122,7 @@ while ($TRUE) {
         Write-Host Invalid subscription Id.`n
     }
 }
-Enable-AzContextAutosave
+Enable-AzContextAutosave -Scope CurrentUser
 $index = 0
 $numbers = "123456789"
 foreach ($char in $subscriptionId.ToCharArray()) {
