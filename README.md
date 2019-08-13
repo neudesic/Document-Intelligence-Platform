@@ -65,18 +65,29 @@ The complete solution is a **Cognitive Solution**. A cognitive solution transfor
 
 ## DIP Specifics
 
-The Document Intelligence Platform (**DIP**) is a manifestation of the solution described and is a prime example of a Cognitive Solution.
+The Document Intelligence Platform (**DIP**) is a prime example of a Cognitive Solution.
 
 * Automates the setup and configuration of numerous Azure services.
+  * Resource providers
+  * Resource group
+  * Storage account / containers
+  * CosmosDB account / database / collections
+  * Form Recognizer service / models
+  * App service plan
+  * DocumentDB / Blob api connections
+  * Function Apps
+  * Logic Apps
 
-* Receives unstructured data such as financial tables and W2 forms as input and stores it in the cloud.
+* Receives unstructured data as input: financial tables and W2 forms.
 
 * Ingestion
   * Uploads the unstructured data to blob containers within cloud storage.
 * Enrichment
-  * Utilizes AI models to extract key-value pairs, text, and tables from the documents. Shapes the data and stores it in database collections.
+  * Utilizes AI models to extract key-value pairs, text, and tables from the documents. Shapes the data and stores it in CosmosDB database collections.
 * Analysis
   * Processes the data from the various documents of a single applicant and produces new metrics such as spending forecasts and ratings.
+* Representation:
+  * Deploys a website which displays the resulting information in a 
 
 # Build
 
