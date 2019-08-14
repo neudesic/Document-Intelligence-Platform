@@ -90,8 +90,8 @@ The Document Intelligence Platform (**DIP**) is a prime example of a Cognitive S
   * Utilizes AI models to extract key-value pairs, text, and tables from the documents. Shapes the data and stores it in CosmosDB database collections.
 * Analysis
   * Processes the data from the various documents of a single applicant and produces new metrics such as spending forecasts and ratings.
-* Representation:
-  * Deploys a website which displays the resulting information in a 
+* Presentation:
+  * Deploys a website which displays the resulting information in an intuitive interface.
 
 # Build
 
