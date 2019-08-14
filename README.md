@@ -14,7 +14,11 @@
 
 # Introduction 
 
-The Document Intelligence Platform  (DIP) is a framework to quickly build AI solutions for document intensive use cases that require a “skilled reviewer”, a "skilled reviewer" being a resources that can review, identify and perform tasks on said documents based on certain criteria.
+* The Document Intelligence Platform (DIP) is a framework to quickly build AI solutions for document intensive use cases that require a “skilled reviewer”, a "skilled reviewer" being a resource that can review, identify and perform tasks on said documents based on certain criteria.
+
+* The Document Intelligence Platform included in this repository processes W-2 forms and financial tables. However, it can be **customized** for a variety of use cases.
+
+![](https://i.imgur.com/aoPWp7f.png)
 
 # Overview
 
@@ -86,8 +90,8 @@ The Document Intelligence Platform (**DIP**) is a prime example of a Cognitive S
   * Utilizes AI models to extract key-value pairs, text, and tables from the documents. Shapes the data and stores it in CosmosDB database collections.
 * Analysis
   * Processes the data from the various documents of a single applicant and produces new metrics such as spending forecasts and ratings.
-* Representation:
-  * Deploys a website which displays the resulting information.
+* Presentation:
+  * Deploys a website which displays the resulting information in an intuitive interface.
 
 # Build
 
@@ -124,7 +128,7 @@ The Document Intelligence Platform (**DIP**) is a prime example of a Cognitive S
 
 * Upon completion, the script will automatically navigate to the following website:
 
-![](https://i.imgur.com/OPGRWjh.png)
+![](https://i.imgur.com/LH06Brj.png)
 
 * Click the "Load Applicants" button to begin using the web app.
 
