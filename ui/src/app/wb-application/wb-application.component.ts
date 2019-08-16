@@ -93,6 +93,7 @@ export class WbApplicationComponent implements OnInit {
       const pdf = new Blob([data], { type: 'application/pdf' });
       this.w2Pdf = URL.createObjectURL(pdf);
     });
+
     // Gets blob with filename = "applicantId" from financial-table container
     this.applicantService.getFinancialBlob(this.applicantId).subscribe(data => {
       const pdf = new Blob([data], { type: 'application/pdf' });

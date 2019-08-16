@@ -290,6 +290,19 @@ $job = Start-Job -ArgumentList $resourceGroupName, $storageAccountName, $locatio
 }
 $stage2 += $job.Id
 
+ 
+# Deploy API Connections
+$storageAccountKey = (Get-AzStorageAccountKey `
+        -ResourceGroupName $resourceGroupName `
+        -AccountName $storageAccountName).Value[0]
+$azureblobParametersTemplate = Get-Content $azureblobParametersFilePath | ConvertFrom-Json
+$azureblobParameters = $azureblobParametersTemplate.parameters
+$azureblobParameters.subscription_id.value = $subscriptionId
+$azureblobParameters.storage_account_name.value = $storageAccountName
+$azureblobParameters.storage_access_key.value = $storageAccountKey
+$azureblobParameters.location.value = $location
+$azureblobParametersTemplate | ConvertTo-Json | Out-File $azureblobParametersFilePath
+
 
 # Create Form Recognizer Account
 Write-Host Creating Form Recognizer service...
@@ -440,6 +453,8 @@ foreach ($info in $functionAppInformation) {
         serverFarmId = "/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName/providers/Microsoft.Web/serverFarms/$AppServicePlanName";
         alwaysOn     = $True;
     }
+    $stage5 += $job.Id
+}
 
     # Create Function App
     Write-Host Creating Function App $name"..."

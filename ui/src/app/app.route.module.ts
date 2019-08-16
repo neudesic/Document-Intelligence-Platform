@@ -8,6 +8,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { MatTableModule } from '@angular/material';
 import { WbUploadComponent } from './wb-upload/wb-upload.component';
 
+
 export const RootRoutes: Routes = [
   {
     path: '',
