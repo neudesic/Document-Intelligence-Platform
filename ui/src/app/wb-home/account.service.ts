@@ -27,6 +27,7 @@ export class AccountService {
   }
 
   async getInfo() {
+
     // For production
     await this.http.get('../../config.json').subscribe(val => this.cosmosAccount = String(val['cosmosAccount']));
     await this.http.get('../../config.json').subscribe(val => this.storageAccount = String(val['storageAccount']));
