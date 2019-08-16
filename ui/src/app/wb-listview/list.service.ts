@@ -53,6 +53,17 @@ export class ListService {
         return this.http.get<Applicant[]>(this.getCosmosUrl(this.cosmosAccount), this.headers).pipe(map(val => val['Documents']));
       }
       return this.sendRequest(this.applicantStatus.pendingApplicants);
+    } else if (status === 'upload') {
+      const applicants = this.http.get<Applicant[]>(this.getCosmosUrl(this.cosmosAccount), this.headers).pipe(map(val => val['Documents']));
+      applicants.subscribe(val => {
+        this.applicantStatus.loaded = true;
+        for (const x in val) {
+          if (!this.applicantStatus.pendingApplicants.includes(val[x]['id']) && !this.applicantStatus.approvedApplicants.includes(val[x]['id']) && !this.applicantStatus.rejectedApplicants.includes(val[x]['id'])) {
+            this.applicantStatus.pendingApplicants.push(val[x]['id']);
+          }
+        }
+        return this.sendRequest(this.applicantStatus.pendingApplicants);
+      });
     } else {
       return this.http.get<Applicant[]>(this.getCosmosUrl(this.cosmosAccount), this.headers).pipe(map(val => val['Documents']));
     }

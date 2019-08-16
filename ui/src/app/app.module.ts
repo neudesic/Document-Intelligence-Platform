@@ -25,6 +25,7 @@ import { WbApplicationComponent } from './wb-application/wb-application.componen
 import { WbDashboardComponent } from './wb-dashboard/wb-dashboard.component';
 import { ListService } from './wb-listview/list.service';
 import { PdfViewerModule } from 'ng2-pdf-viewer';
+import { WbUploadComponent } from './wb-upload/wb-upload.component';
 
 
 @NgModule({
@@ -39,6 +40,7 @@ import { PdfViewerModule } from 'ng2-pdf-viewer';
     WbListviewComponent,
     WbApplicationComponent,
     WbDashboardComponent,
+    WbUploadComponent,
   ],
   imports: [
     BrowserModule,
@@ -68,7 +70,7 @@ import { PdfViewerModule } from 'ng2-pdf-viewer';
   providers: [
     BsModalService,
     ListService,
-    WbApplicationDetailService,
+    WbApplicationDetailService
   ],
   bootstrap: [AppComponent]
 })

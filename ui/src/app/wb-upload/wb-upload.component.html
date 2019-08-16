@@ -1,0 +1,26 @@
+<div class="form-group">
+    <label for="file">Choose W2 Form</label>
+    <input type="file" id="fileW2" (change)="handleFileInputW2($event.target.files)">
+    <br>
+    <label for="file">Choose Financial Form</label>
+    <input type="file" id="fileFinancial" (change)="handleFileInputFinancial($event.target.files)">
+    <br>
+    <div style="border:0px; float: left; width: 225px; border-bottom: 1.5px solid; border-color: #7E66F9">
+        <input type="text" placeholder="Provide File Name (without extension)" (change)="nameFile($event)"
+            style="border:0px; font-size: 13px; width: 225px; background-color: #F8F9FE" />
+    </div>
+    <br><br>
+    <div>
+        <button (click)="submit()" type=”button” style="float: left">Upload</button>
+        <mat-spinner *ngIf="loading == 'loading'" [diameter]="20" style="float: left; margin-left: 5px; margin-top: 2px"></mat-spinner>
+        <p *ngIf="loading == 'finished'" style="color: green; padding-top:3px">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Upload Complete</p>
+        <p *ngIf="error == 'error'" style="color: red; padding-top:3px">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Error</p>
+    </div>
+    <br>
+    <br>
+    <p *ngIf="w2Status == 'pending'" style="color: red">*Upload W2 Form</p>
+    <p *ngIf="financialStatus == 'pending'" style="color: red">*Upload Financial Form</p>
+    <p *ngIf="fileNameStatus == 'pending'" style="color: red">*Input File Name</p>
+    <p *ngIf="extensionStatus == 'invalid'" style="color: red">*Invalid File Type(s) (only pdf, png, jpg allowed)</p>
+    <p *ngIf="sameExtension == 'invalid'" style="color: red">*Files Must Be Of The Same Type</p>
+</div>

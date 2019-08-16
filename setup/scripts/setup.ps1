@@ -278,6 +278,15 @@ $job = Start-Job -ArgumentList $resourceGroupName, $storageAccountName, $locatio
         -Context $storageContext `
         -IndexDocument "index.html" `
         -ErrorDocument404Path "error.html"
+    
+    $CorsRules = (@{
+            AllowedHeaders  = @("*");
+            AllowedOrigins  = @("*");
+            MaxAgeInSeconds = 0;
+            AllowedMethods  = @("Get", "Put", "Post");
+            ExposedHeaders  = @("*");
+        })
+    Set-AzStorageCORSRule -ServiceType Blob -CorsRules $CorsRules -Context $storageContext
 }
 $stage2 += $job.Id
 
@@ -601,16 +610,6 @@ foreach ($containerName in $cosmosContainerNames) {
 }
 
 
-# Populate Angular Configuration File
-$angularConfig = Get-Content $angularConfigFilePath | ConvertFrom-Json
-$angularConfig.cosmosAccount = $cosmosAccountName
-$angularConfig.storageAccount = $storageAccountName
-$angularConfig.cosmosAccessKey = $cosmosAccessKey.primaryMasterKey
-$angularConfig.searchAccount = $cognitiveSearchName
-$angularConfig.searchKey = (Get-AzSearchQueryKey -ResourceGroupName $resourceGroupName -ServiceName $cognitiveSearchName).Key
-$angularConfig | ConvertTo-Json | Out-File $angularConfigFilePath
-
-
 # Upload Blobs And Training Data
 Write-Host Uploading blobs and training documents...`n
 $trainingInfo = @(
@@ -640,11 +639,6 @@ foreach ($info in $trainingInfo) {
                 -Name $args[4]
             $storageContext = $storageAccount.Context
             if ($file.Name -eq "assets") {
-                Get-ChildItem ($args[0] + $file.Name) | set-AzStorageblobcontent `
-                    -Container $args[2] `
-                    -Blob 'config.json' `
-                    -Context $storageContext `
-                    -Force
                 continue
             }
             if (($file | Select-Object Extension).Extension -eq '.html') {
@@ -1196,7 +1190,48 @@ Process_Jobs -idArray $stage6
 #----------------------------------------------------------------#
 
 
-$stage7 = @()
+$logicAppTriggerName = (Get-AzLogicAppTrigger `
+        -ResourceGroupName $resourceGroupName `
+        -Name $logicApp1Name).Name 
+$logicAppTriggerUri1 = (Get-AzLogicAppTriggerCallbackUrl `
+        -ResourceGroupName $resourceGroupName `
+        -Name $logicApp1Name `
+        -TriggerName $logicAppTriggerName).Value
+$logicAppTriggerName = (Get-AzLogicAppTrigger `
+        -ResourceGroupName $resourceGroupName `
+        -Name $logicApp2Name).Name 
+$logicAppTriggerUri2 = (Get-AzLogicAppTriggerCallbackUrl `
+        -ResourceGroupName $resourceGroupName `
+        -Name $logicApp2Name `
+        -TriggerName $logicAppTriggerName).Value
+
+$angularConfig = Get-Content $angularConfigFilePath | ConvertFrom-Json
+$angularConfig.cosmosAccount = $cosmosAccountName
+$angularConfig.storageAccount = $storageAccountName
+$angularConfig.cosmosAccessKey = $cosmosAccessKey.primaryMasterKey
+$angularConfig.searchAccount = $cognitiveSearchName
+$angularConfig.searchKey = (Get-AzSearchQueryKey -ResourceGroupName $resourceGroupName -ServiceName $cognitiveSearchName).Key
+$angularConfig.logicAppTrigger1 = $logicAppTriggerUri1
+$angularConfig.logicAppTrigger2 = $logicAppTriggerUri2
+$angularConfig.w2Model = $formRecognizerModels[$storageContainerW2Training]
+$angularConfig.financialModel = $formRecognizerModels[$storageContainerFinancialTraining];
+$angularConfig.storageSas = New-AzStorageAccountSASToken -Service Blob, File, Table, Queue -ResourceType Service, Container, Object -Permission "racwdlup" -Context $storageContext -ExpiryTime (Get-Date -Date "1/1/2999")
+$angularConfig | ConvertTo-Json | Out-File $angularConfigFilePath
+
+set-AzStorageblobcontent `
+    -File $angularConfigFilePath `
+    -Container  "`$web"`
+    -Blob 'config.json' `
+    -Context $storageContext `
+    -Force
+
+
+#----------------------------------------------------------------#
+#   Stage 8                                                      #
+#----------------------------------------------------------------#
+
+
+$stage8 = @()
 
 
 # Process Documents
@@ -1205,13 +1240,6 @@ $runInformation = @(
     ($storageContainerFinancial, $formRecognizerModels[$storageContainerFinancialTraining], "Financial Table"),
     ($storageContainerW2, $formRecognizerModels[$storageContainerW2Training], "W2")
 )
-$logicAppTriggerName = (Get-AzLogicAppTrigger `
-        -ResourceGroupName $resourceGroupName `
-        -Name $logicApp1Name).Name 
-$logicAppTriggerUri = (Get-AzLogicAppTriggerCallbackUrl `
-        -ResourceGroupName $resourceGroupName `
-        -Name $logicApp1Name `
-        -TriggerName $logicAppTriggerName).Value
 foreach ($info in $runInformation) {
     $containerName = $info[0]
     $model = $info[1]
@@ -1226,7 +1254,7 @@ foreach ($info in $runInformation) {
             "modelId"  = $model;
             "formType" = $formType
         } | ConvertTo-Json
-        $job = Start-Job -ArgumentList $logicAppTriggerUri, ($body | ConvertTo-Json), $credentials -ScriptBlock {
+        $job = Start-Job -ArgumentList $logicAppTriggerUri1, ($body | ConvertTo-Json), $credentials -ScriptBlock {
             $ErrorActionPreference = "Stop"
             while ($TRUE) {
                 try {
@@ -1241,30 +1269,23 @@ foreach ($info in $runInformation) {
                 -ContentType "application/json" `
                 -Body ($args[1] | ConvertFrom-Json) 
         }
-        $stage7 += $job.Id
+        $stage8 += $job.Id
     }
 }
 
 
-Process_Jobs -idArray $stage7
+Process_Jobs -idArray $stage8
 
 
 #----------------------------------------------------------------#
-#   Stage 8                                                      #
+#   Stage 9                                                      #
 #----------------------------------------------------------------#
 
 
-$stage8 = @()
+$stage9 = @()
 
 
 Write-Host `nAnalyzing documents:`n  
-$logicAppTriggerName = (Get-AzLogicAppTrigger `
-        -ResourceGroupName $resourceGroupName `
-        -Name $logicApp2Name).Name 
-$logicAppTriggerUri = (Get-AzLogicAppTriggerCallbackUrl `
-        -ResourceGroupName $resourceGroupName `
-        -Name $logicApp2Name `
-        -TriggerName $logicAppTriggerName).Value
 $container = Get-AzStorageContainer -Name $storageContainerFinancial -Context $storageContext | Get-AzStorageBlob
 foreach ($file in $container) { 
     $fileName = $file.Name
@@ -1272,7 +1293,7 @@ foreach ($file in $container) {
     $body = @{
         "recordId" = $file.Name
     } | ConvertTo-Json
-    $job = Start-Job -ArgumentList $logicAppTriggerUri, ($body | ConvertTo-Json), $credentials -ScriptBlock {
+    $job = Start-Job -ArgumentList $logicAppTriggerUri2, ($body | ConvertTo-Json), $credentials -ScriptBlock {
         $ErrorActionPreference = "Stop"
         while ($TRUE) {
             try {
@@ -1287,11 +1308,11 @@ foreach ($file in $container) {
             -ContentType "application/json" `
             -Body ($args[1] | ConvertFrom-Json) 
     }
-    $stage8 += $job.Id
+    $stage9 += $job.Id
 }
 
 
-Process_Jobs -idArray $stage8
+Process_Jobs -idArray $stage9
 
 
 Write-Host Deployment complete.`n

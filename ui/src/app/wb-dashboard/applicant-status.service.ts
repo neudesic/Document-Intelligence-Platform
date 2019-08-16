@@ -16,6 +16,7 @@ export class ApplicantStatusService {
   public pendingApplicants = new Array<any>();
   public loaded = false;
 
+
   constructor() { }
 
   // Adds applicant with id = "applicantId" to approved collection and removes it from pending/rejected collections
