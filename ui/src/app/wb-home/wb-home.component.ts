@@ -13,6 +13,7 @@ export class WbHomeComponent implements OnInit {
 
   constructor(private router: Router, private account: AccountService) { }
 
-  ngOnInit() { }
+  ngOnInit() {
+   }
 
 }

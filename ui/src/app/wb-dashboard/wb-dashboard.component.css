@@ -137,3 +137,13 @@
     border-width: 1px;
     box-shadow: -2px 4px  rgb(240, 234, 234)
   } 
+
+  .upload{
+    border:none;
+    border-radius:5px;
+    background:#7E66F9;
+    font-size:15px;
+    color: white;
+    padding:3px 8px;
+    margin: 10px auto;
+  }

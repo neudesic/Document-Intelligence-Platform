@@ -1,7 +1,12 @@
 {
-	"cosmosAccount": "",
-	"storageAccount": "",
-	"cosmosAccessKey": "",
-    "searchAccount": "",
-    "searchKey":""
+    "cosmosAccount":  "",
+    "storageAccount":  "",
+    "cosmosAccessKey":  "",
+    "searchAccount":  "",
+    "searchKey":  "",
+    "logicAppTrigger1":  "",
+    "logicAppTrigger2":  "",
+    "w2Model":  "",
+    "financialModel":  "",
+    "storageSas":  ""
 }

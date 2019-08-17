@@ -71,12 +71,20 @@ export class WbApplicationComponent implements OnInit {
     // Gets document with id = "applicantId" from processed collection and formats certain fields
     this.applicantService.getProcessed(this.applicantId).subscribe(val => {
       this.processed = val;
-      this.percentageGrossIncomeInsurance = (+val['yearlyInsuranceForecast'] * 100) + '%';
-      this.percentageGrossIncomeMortgage = (+val['yearlyMortageForecast'] * 100) + '%';
-      if (+val['yearlyNetForecast'] < 0) {
-        this.yearlyNet = '-' + this.applicantService.numberBeautify(+val['yearlyNetForecast'] * -1);
+      if (String(+val['yearlyInsuranceForecast'] * 100).length > 4) {
+        this.percentageGrossIncomeInsurance = String(+val['yearlyInsuranceForecast'] * 100).substring(0, 4) + '%';
       } else {
-        this.yearlyNet = '' + this.applicantService.numberBeautify(+val['yearlyNetForecast']);
+        this.percentageGrossIncomeInsurance = (+val['yearlyInsuranceForecast'] * 100) + '%';
+      }
+      if (String(+val['yearlyMortageForecast'] * 100).length > 4) {
+        this.percentageGrossIncomeMortgage = String(+val['yearlyMortageForecast'] * 100).substring(0, 4) + '%';
+      } else {
+        this.percentageGrossIncomeMortgage = (+val['yearlyMortageForecast'] * 100) + '%';
+      }
+      if (+val['yearlyNetForecast'] < 0) {
+        this.yearlyNet = '-' + this.applicantService.numberBeautify((Math.round(+val['yearlyNetForecast'] * 100) / 100) * -1);
+      } else {
+        this.yearlyNet = '' + this.applicantService.numberBeautify((Math.round(+val['yearlyNetForecast'] * 100) / 100));
       }
     });
 
